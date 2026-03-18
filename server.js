@@ -5,12 +5,12 @@
 
 const http = require('http');
 const url = require('url');
-const { exec } from 'child_process';
+const { execSync, exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const PORT = 8765;
+const PORT = 8766;
 const REFRESH_INTERVAL = 30000; // 30s 刷新间隔
 
 // 系统数据缓存

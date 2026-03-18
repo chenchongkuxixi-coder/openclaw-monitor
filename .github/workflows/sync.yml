@@ -1,0 +1,26 @@
+name: Auto Sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # 每30分钟同步一次
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Git Pull
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git pull origin main --ff-only || echo "No updates or merge conflict"
+
+      - name: Push updates
+        if: success()
+        run: |
+          git push origin main || echo "No changes to push"
