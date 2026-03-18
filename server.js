@@ -1,6 +1,6 @@
 /**
  * OpenClaw 运维监控面板 - 后端服务
- * 提供真实系统数据 API
+ * 提供真实系统数据 API + HTTP Basic Auth 保护
  */
 
 const http = require('http');
@@ -10,8 +10,32 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// ==================== 配置 ====================
 const PORT = 8766;
 const REFRESH_INTERVAL = 30000; // 30s 刷新间隔
+
+// 认证配置（访问公网地址时需要输入）
+const AUTH_USER = 'paddy';
+const AUTH_PASS = 'p100monitor';
+// ===========================================
+
+// 简单的 Base64 校验
+function checkAuth(authHeader) {
+  if (!authHeader || !authHeader.startsWith('Basic ')) return false;
+  const base64 = authHeader.slice(6);
+  const decoded = Buffer.from(base64, 'base64').toString();
+  const [user, pass] = decoded.split(':');
+  return user === AUTH_USER && pass === AUTH_PASS;
+}
+
+// 发送 401 认证挑战
+function sendAuthChallenge(res) {
+  res.writeHead(401, {
+    'WWW-Authenticate': 'Basic realm="OpenClaw Monitor"',
+    'Content-Type': 'text/html'
+  });
+  res.end('<h1>401 Unauthorized</h1><p>需要登录才能访问</p>');
+}
 
 // 系统数据缓存
 let systemCache = {
@@ -54,7 +78,7 @@ function getMemoryUsage() {
         return;
       }
       
-      const pageSize = 4096; // macOS default page size
+      const pageSize = 4096;
       const freeMatch = stdout.match(/Pages free:\s*(\d+)/);
       const activeMatch = stdout.match(/Pages active:\s*(\d+)/);
       const inactiveMatch = stdout.match(/Pages inactive:\s*(\d+)/);
@@ -127,6 +151,13 @@ function handleApi(req, res) {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   
+  // 认证检查（health 接口除外）
+  const authHeader = req.headers['authorization'];
+  if (pathname !== '/health' && !checkAuth(authHeader)) {
+    sendAuthChallenge(res);
+    return;
+  }
+  
   // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
@@ -173,6 +204,13 @@ function handleApi(req, res) {
 
 // 静态文件服务
 function serveStatic(req, res) {
+  // 静态文件也需要认证
+  const authHeader = req.headers['authorization'];
+  if (!checkAuth(authHeader)) {
+    sendAuthChallenge(res);
+    return;
+  }
+  
   let filePath = req.url === '/' ? '/index.html' : req.url;
   filePath = path.join(__dirname, 'public', filePath);
   
@@ -221,6 +259,7 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`🦞 OpenClaw Monitor Server running at http://localhost:${PORT}`);
   console.log(`📊 API: http://localhost:${PORT}/api/status`);
+  console.log(`🔐 Auth: ${AUTH_USER} / ${AUTH_PASS}`);
   console.log(`🔄 Refresh interval: ${REFRESH_INTERVAL / 1000}s`);
   
   // 初始数据获取
