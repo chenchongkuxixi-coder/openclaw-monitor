@@ -2,619 +2,391 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🚀 P100 Project Intelligence</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>P100 Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg-main: #F4F7F9;
-  --bg-card: #FFFFFF;
-  --border-color: #E5E7EB;
-  --text-main: #111827;
-  --text-muted: #6B7280;
-  --accent-blue: #2563EB;
-  --accent-purple: #7C3AED;
-  --accent-green: #059669;
-  --danger: #DC2626;
-  --warning: #D97706;
-  --success: #059669;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-body.dark {
-  --bg-main: #0a0e17;
-  --bg-card: #111827;
-  --border-color: #1e293b;
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-}
-
+/* ── Reset & Base ── */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-
-body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  transition: background 0.5s ease, color 0.5s ease;
+:root {
+  --bg: #F8FAFC; --bg-card: #FFFFFF; --text-main: #1E293B; --text-muted: #64748B;
+  --border: #E2E8F0; --accent-blue: #3B82F6; --accent-orange: #F97316;
+  --accent-purple: #8B5CF6; --accent-green: #22C55E; --success: #16A34A;
+  --warning: #D97706; --danger: #DC2626; --accent-red: #EF4444;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
 }
-
-/* ── Sidebar ── */
-.sidebar {
-  width: 260px;
-  background-color: var(--bg-card);
-  border-right: 1px solid var(--border-color);
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: all 0.5s ease;
+body.dark {
+  --bg: #0F172A; --bg-card: #1E293B; --text-main: #F1F5F9; --text-muted: #94A3B8;
+  --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
 }
+body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 80px; }
 
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 36px;
-  padding: 0 8px;
-  letter-spacing: -0.5px;
+/* ── Top Tab Bar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
-
-.sidebar-logo .brand { color: var(--text-main); }
-.sidebar-logo .accent { color: var(--accent-blue); }
-
-.nav-item {
-  padding: 11px 14px;
-  color: var(--text-muted);
-  border-radius: 8px;
-  margin-bottom: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 500;
-  font-size: 14px;
+.topbar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 6px;
+  border-bottom: 1px solid var(--border);
 }
+.brand { font-size: 15px; font-weight: 700; color: var(--text-main); }
+.brand .accent { color: var(--accent-blue); }
+.header-right { font-size: 11px; color: var(--text-muted); }
 
-.nav-item:hover { background-color: #F3F4F6; color: var(--text-main); }
-body.dark .nav-item:hover { background-color: #1e293b; }
-.nav-item.active { background-color: #EFF6FF; color: var(--accent-blue); font-weight: 600; }
-body.dark .nav-item.active { background-color: #1e3a5f; }
+.tabs {
+  display: flex; overflow-x: auto; gap: 0;
+  padding: 0 4px;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0; padding: 10px 12px; font-size: 12px; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.tab:hover { color: var(--text-main); }
+.tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); font-weight: 600; }
 
-.status-badge { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #D1FAE5; color: #15803D; display: inline-block; }
-.status-badge.warn { background: #FEF3C7; color: #92400E; }
-.status-badge.error { background: #FEE2E2; color: #DC2626; }
+/* ── Main Content ── */
+.main { padding: 12px; max-width: 800px; margin: 0 auto; }
+.view-section { display: none; }
+.view-section.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── KPI Cards ── */
+.kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.kpi-row.three { grid-template-columns: repeat(3, 1fr); }
+.kpi-card {
+  background: var(--bg-card); border-radius: 10px; padding: 12px;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  text-align: center;
+}
+.kpi-label { font-size: 10px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.kpi-value { font-size: 22px; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+.kpi-value.small { font-size: 16px; }
+.kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.kpi-icon { font-size: 20px; margin-bottom: 4px; }
+
+/* ── Panel ── */
+.panel {
+  background: var(--bg-card); border-radius: 10px; margin-bottom: 10px;
+  border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.panel-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.panel-body { padding: 12px 14px; }
+
+/* ── Status Badge ── */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+.badge.blue { background: #DBEAFE; color: #1D4ED8; }
+.badge.red { background: #FEE2E2; color: #B91C1C; }
+.badge.green { background: #D1FAE5; color: #15803D; }
+.badge.orange { background: #FFEDD5; color: #C2410C; }
+.badge.purple { background: #EDE9FE; color: #6D28D9; }
+body.dark .badge.blue { background: #1e3a5f; color: #60a5fa; }
+body.dark .badge.red { background: #3f1a1a; color: #f87171; }
+body.dark .badge.green { background: #14532d; color: #4ade80; }
+
+/* ── Risk Item ── */
+.risk-item {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.risk-item:last-child { border-bottom: none; }
+.risk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.risk-dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.risk-dot.orange { background: var(--warning); }
+.risk-dot.yellow { background: #EAB308; }
+.risk-title { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 3px; }
+.risk-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+.risk-id { font-size: 10px; font-weight: 700; color: var(--danger); background: #FEE2E2; padding: 1px 5px; border-radius: 4px; margin-right: 4px; }
+
+/* ── Milestone ── */
+.ml-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.ml-item:last-child { border-bottom: none; }
+.ml-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--accent-blue); background: var(--bg-card); }
+.ml-dot.done { background: var(--success); border-color: var(--success); }
+.ml-date { font-size: 11px; color: var(--text-muted); min-width: 60px; }
+.ml-text { font-size: 12px; font-weight: 500; color: var(--text-main); flex: 1; }
+
+/* ── Doc Row ── */
+.doc-row { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.doc-row:last-child { border-bottom: none; }
+.doc-icon { font-size: 16px; }
+.doc-title { font-size: 12px; font-weight: 500; color: var(--text-main); flex: 1; line-height: 1.4; }
+.doc-date { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Decision ── */
+.decision-item { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.decision-item:last-child { border-bottom: none; }
+.decision-date { font-size: 10px; color: var(--accent-blue); font-weight: 600; margin-bottom: 3px; }
+.decision-text { font-size: 12px; color: var(--text-main); line-height: 1.5; }
+
+/* ── Team Item ── */
+.team-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.team-item:last-child { border-bottom: none; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+.team-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.team-role { font-size: 11px; color: var(--text-muted); }
+
+/* ── BOM Tags ── */
+.bom-cat { margin-bottom: 12px; }
+.bom-cat-title { font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.bom-cat-title .count { font-size: 10px; font-weight: 500; color: var(--text-muted); background: var(--border); padding: 1px 6px; border-radius: 10px; }
+.bom-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.bom-tag { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); }
+
+/* ── Sys KPI ── */
+.sys-kpi { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.sys-kpi:last-child { border-bottom: none; }
+.sys-kpi-label { font-size: 11px; color: var(--text-muted); min-width: 60px; }
+.sys-kpi-value { font-size: 14px; font-weight: 700; color: var(--text-main); flex: 1; }
+.pbar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.pfill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.pfill.cpu { background: var(--accent-orange); }
+.pfill.mem { background: var(--accent-blue); }
+.pfill.ctx { background: var(--accent-purple); }
+
+/* ── Process Item ── */
+.proc-item { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.proc-item:last-child { border-bottom: none; }
+.proc-name { font-size: 12px; font-weight: 600; color: var(--text-main); }
+.proc-desc { font-size: 10px; color: var(--text-muted); }
+.proc-nums { text-align: right; }
+.proc-cpu { font-size: 12px; font-weight: 700; color: var(--accent-orange); }
+.proc-mem { font-size: 10px; color: var(--text-muted); }
 
 /* ── Progress ── */
 .progress-bar { background: #E5E7EB; border-radius: 6px; overflow: hidden; height: 6px; }
-.progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; font-size: 10px; color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; }
-.progress-fill.cpu { background: var(--accent-orange); }
-.progress-fill.memory { background: var(--accent-blue); }
-.progress-fill.context { background: var(--accent-purple); }
+body.dark .progress-bar { background: #334155; }
+.progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
 
-.sidebar-bottom {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
-}
-.sidebar-info { font-size: 11px; color: var(--text-muted); padding: 0 8px; }
-body.dark .sidebar-info { color: #475569; }
+/* ── Tag ── */
+.tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.tag.high { background: #FEE2E2; color: #B91C1C; }
+.tag.medium { background: #FFEDD5; color: #C2410C; }
+.tag.low { background: #FEF9C3; color: #854D0E; }
+body.dark .tag.high { background: #3f1a1a; color: #f87171; }
 
-/* ── Main Content ── */
-.main-content {
-  flex: 1;
-  padding: 28px 36px;
-  overflow-y: auto;
-  position: relative;
-}
-
-.view-section { display: none; animation: fadeIn 0.3s ease-out forwards; }
-.view-section.active-view { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-/* ── Header ── */
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 28px;
-}
-.view-header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
-.view-header .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
-.header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-.badge {
-  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1px solid;
-}
-.badge.danger { background: #FEE2E2; color: var(--danger); border-color: #FECACA; }
-.badge.success { background: #D1FAE5; color: var(--success); border-color: #A7F3D0; }
-.badge.warning { background: #FEF3C7; color: var(--warning); border-color: #FDE68A; }
-.badge.blue { background: #DBEAFE; color: var(--accent-blue); border-color: #BFDBFE; }
-.badge.pulse { animation: pulse 2s infinite; }
-@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(220,38,38,0.4)} 70%{box-shadow:0 0 0 6px rgba(220,38,38,0)} 100%{box-shadow:0 0 0 0 rgba(220,38,38,0)} }
-
-/* ── Grid Layouts ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-.dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-/* ── Cards & Panels ── */
-.card, .panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.5s ease;
-}
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #F3F4F6;
-  transition: border-color 0.5s ease;
-}
-body.dark .panel-header { border-bottom-color: #1e293b; }
-.panel-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
-.panel-sub { font-size: 12px; color: var(--text-muted); }
-
-/* ── KPI Cards ── */
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.5s ease;
-}
-.kpi-title { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 8px; }
-.kpi-value { font-size: 28px; font-weight: 700; color: var(--text-main); }
-.kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
-.kpi-bar { margin-top: 10px; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; }
-body.dark .kpi-bar { background: #1e293b; }
-.kpi-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-
-/* ── Risk Items ── */
-.risk-item {
-  background: #F9FAFB;
-  border-left: 4px solid var(--danger);
-  padding: 14px;
-  border-radius: 6px;
-  margin-bottom: 12px;
-  border-top: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
-}
-body.dark .risk-item { background: #1a2234; }
-.risk-item.warning { border-left-color: var(--warning); }
-.risk-item .risk-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
-.risk-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-.ai-insight {
-  background: #F3E8FF; color: #6B21A8; padding: 8px 12px; border-radius: 6px;
-  font-size: 12px; display: flex; gap: 8px; margin-top: 10px; border: 1px solid #E9D5FF;
-}
-body.dark .ai-insight { background: #2d1b5e; color: #c4b5fd; border-color: #4c1d95; }
-
-/* ── Milestone Timeline ── */
-.milestone-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid #F3F4F6;
-}
-body.dark .milestone-item { border-bottom-color: #1e293b; }
-.milestone-item:last-child { border-bottom: none; }
-.milestone-date { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-.milestone-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
-.milestone-status { font-size: 11px; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
-.status-done { background: #D1FAE5; color: var(--success); }
-.status-progress { background: #DBEAFE; color: var(--accent-blue); }
-.status-pending { background: #F3F4F6; color: var(--text-muted); }
-body.dark .status-done { background: #052e16; color: #4ade80; }
-body.dark .status-progress { background: #1e3a5f; color: #60a5fa; }
-body.dark .status-pending { background: #1e293b; color: #94a3b8; }
-
-/* ── Team ── */
-.team-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 0; border-bottom: 1px solid #F3F4F6;
-}
-body.dark .team-item { border-bottom-color: #1e293b; }
-.team-item:last-child { border-bottom: none; }
-.team-info { display: flex; align-items: center; gap: 10px; }
-.avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: #F3F4F6; display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 13px; border: 1px solid var(--border-color);
-}
-body.dark .avatar { background: #1e293b; }
-.role-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
-.role-title { font-size: 11px; color: var(--text-muted); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--bg-card); }
-.dot-green { background: var(--success); }
-.dot-red { background: var(--danger); }
-.dot-yellow { background: var(--warning); }
-
-/* ── BOM ── */
-.bom-category {
-  margin-bottom: 16px;
-}
-.bom-category-title {
-  font-size: 13px; font-weight: 700; color: var(--text-main);
-  margin-bottom: 10px; padding-bottom: 6px;
-  border-bottom: 2px solid var(--accent-blue);
-  display: flex; align-items: center; gap: 8px;
-}
-.bom-items { display: flex; flex-wrap: wrap; gap: 6px; }
-.bom-item {
-  padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
-  background: #F9FAFB; color: var(--text-main);
-  border: 1px solid var(--border-color);
-}
-body.dark .bom-item { background: #1e293b; }
-.bom-item .qty { color: var(--text-muted); font-weight: 400; }
-
-/* ── Docs Table ── */
-.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.data-table th, .data-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #F3F4F6; }
-body.dark .data-table th, body.dark .data-table td { border-bottom-color: #1e293b; }
-.data-table th { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; background: #F9FAFB; }
-body.dark .data-table th { background: #1a2234; }
-.data-table tr:hover td { background: #F9FAFB; }
-body.dark .data-table tr:hover td { background: #1e293b; }
-
-/* ── Option Cards ── */
-.option-card {
-  background: #F9FAFB; padding: 12px; border-radius: 8px;
-  border: 1px solid var(--border-color); flex: 1;
-}
-body.dark .option-card { background: #1a2234; }
-.option-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.option-desc { font-size: 11px; color: var(--text-muted); }
-
-/* ── Log Entry ── */
-.log-entry { font-size: 12px; color: var(--text-main); display: flex; gap: 10px; line-height: 1.5; padding: 6px 0; border-bottom: 1px solid #F3F4F6; }
-body.dark .log-entry { border-bottom-color: #1e293b; }
-.log-entry:last-child { border-bottom: none; }
-.log-time { color: var(--text-muted); font-weight: 500; white-space: nowrap; min-width: 60px; }
-
-/* ── Tags ── */
-.tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.tag.phase-evt { background: #FEF3C7; color: #92400E; }
-.tag.phase-dvt { background: #DBEAFE; color: #1E40AF; }
-.tag.phase-pvt { background: #FCE7F3; color: #9D174D; }
-body.dark .tag.phase-evt { background: #451a03; color: #fbbf24; }
-body.dark .tag.phase-dvt { background: #1e3a5f; color: #60a5fa; }
-body.dark .tag.phase-pvt { background: #500724; color: #f472b6; }
+/* ── Countdown ── */
+.countdown-box { text-align: center; padding: 16px; background: linear-gradient(135deg, #EFF6FF, #F5F3FF); border-radius: 10px; border: 1px solid var(--border); }
+body.dark .countdown-box { background: linear-gradient(135deg, #1e3a5f, #2e1065); }
+.countdown-number { font-size: 48px; font-weight: 800; color: var(--accent-blue); line-height: 1; }
+.countdown-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
 /* ── Footer ── */
-.footer-bar {
-  text-align: center; color: var(--text-muted); font-size: 11px;
-  padding: 16px 0 4px; border-top: 1px solid var(--border-color);
-  margin-top: 20px;
-}
-body.dark .footer-bar { border-top-color: #1e293b; }
+.footer-bar { text-align: center; color: var(--text-muted); font-size: 11px; padding: 16px 0 8px; }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+/* ── Phase Tag ── */
+.phase-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+.phase-dvt { background: #DBEAFE; color: #1D4ED8; }
+body.dark .phase-dvt { background: #1e3a5f; color: #60a5fa; }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <span class="brand">🚀</span>
-    <span>P100 <span class="accent">Intelligence</span></span>
+<!-- ═══════════════════════ TOP TAB BAR ═══════════════════════ -->
+<div class="topbar">
+  <div class="topbar-header">
+    <div class="brand">🚀 P100 <span class="accent">Intelligence</span></div>
+    <div class="header-right">
+      <span id="theme-label" style="cursor:pointer">☀️</span> · <span id="header-time">--:--</span>
+    </div>
   </div>
-  
-  <div class="nav-item active" data-target="overview">📊 项目概览</div>
-  <div class="nav-item" data-target="bom">📦 BOM 物料</div>
-  <div class="nav-item" data-target="milestone">📅 里程碑</div>
-  <div class="nav-item" data-target="risks">⚠️ 风险追踪</div>
-  <div class="nav-item" data-target="docs">🗂️ 文档中心</div>
-  <div class="nav-item" data-target="team">👥 核心团队</div>
-  <div class="nav-item" data-target="schedule">⏱️ 项目排期</div>
-  <div class="nav-item" data-target="system">🖥️ 系统监控</div>
-  
-  <div class="sidebar-bottom">
-    <div class="sidebar-info">最后更新: <span id="last_update">--</span></div>
-    <div class="sidebar-info" style="margin-top:4px">Theme: <span id="theme_label">☀️ 日间</span></div>
+  <div class="tabs">
+    <div class="tab active" data-target="overview">📊 概览</div>
+    <div class="tab" data-target="bom">📦 BOM</div>
+    <div class="tab" data-target="milestone">📅 里程碑</div>
+    <div class="tab" data-target="risks">⚠️ 风险</div>
+    <div class="tab" data-target="docs">🗂️ 文档</div>
+    <div class="tab" data-target="team">👥 团队</div>
+    <div class="tab" data-target="system">🖥️ 系统</div>
   </div>
 </div>
 
 <!-- ═══════════════════════ MAIN ═══════════════════════ -->
-<div class="main-content">
+<div class="main">
 
-  <!-- VIEW: 项目概览 -->
-  <div id="view-overview" class="view-section active-view">
-    <div class="view-header">
-      <div>
-        <h1>Project Alpha (Even G2 AR Glasses)</h1>
-        <div class="subtitle">智能眼镜 DVT 阶段 · Even Realities</div>
-      </div>
-      <div class="header-badges">
-        <span class="badge blue">DVT Phase</span>
-        <span class="badge success">Schedule: On Track</span>
-        <span class="badge warning">BOM: 67 Items</span>
-      </div>
-    </div>
-    
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-title">当前阶段</div>
-        <div class="kpi-value" id="kpi-phase">DVT</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-phase-bar" style="width:66%; background: var(--accent-blue)"></div></div>
-        <div class="kpi-sub">EVT → DVT → PVT</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">BOM 物料总数</div>
-        <div class="kpi-value" id="kpi-bom">67</div>
-        <div class="kpi-sub">日版 · 美版 70 种</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">HIGH 风险数</div>
-        <div class="kpi-value" id="kpi-risks" style="color: var(--danger)">2</div>
-        <div class="kpi-sub">需重点关注</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">DVT 出货倒计时</div>
-        <div class="kpi-value" id="kpi-countdown" style="color: var(--accent-blue)">13天</div>
-        <div class="kpi-sub" id="kpi-ship-date">2026-03-31</div>
-      </div>
-    </div>
-    
-    <div class="dashboard-grid">
-      <div style="display:flex;flex-direction:column;gap:20px">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">🔥 关键风险 (HIGH)</div>
-            <div class="panel-sub">来源: 飞书会议纪要</div>
-          </div>
-          <div id="overview-risks"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">🎯 近期关键决策</div>
-          </div>
-          <div id="overview-decisions"></div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:20px">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">📅 DVT 里程碑</div>
-          </div>
-          <div id="overview-milestones"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">📄 最近更新</div>
-          </div>
-          <div id="overview-docs"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- VIEW: BOM -->
-  <div id="view-bom" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>📦 BOM 物料清单</h1>
-        <div class="subtitle">Even G2 CE POSM · 日规版</div>
-      </div>
-      <div class="header-badges">
-        <span class="badge blue">日版 67 种</span>
-        <span class="badge warning">美版 70 种</span>
-      </div>
-    </div>
-    <div id="bom-content"></div>
-  </div>
-
-  <!-- VIEW: 里程碑 -->
-  <div id="view-milestone" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>📅 项目里程碑</h1>
-        <div class="subtitle">EVT → DVT → PVT → MP</div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">DVT 阶段里程碑</div>
-        <div class="panel-sub">来源: P100 排期索引</div>
-      </div>
-      <div id="milestone-list"></div>
-    </div>
-  </div>
-
-  <!-- VIEW: 风险追踪 -->
-  <div id="view-risks" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>⚠️ 风险追踪</h1>
-        <div class="subtitle">按严重程度分级 · 来源: 飞书会议纪要</div>
-      </div>
-      <div class="header-badges">
-        <span class="badge danger pulse">2 HIGH</span>
-        <span class="badge warning">N MEDIUM</span>
-      </div>
-    </div>
-    <div id="risk-content"></div>
-  </div>
-
-  <!-- VIEW: 文档中心 -->
-  <div id="view-docs" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>🗂️ 文档中心</h1>
-        <div class="subtitle">飞书文档索引 · 分类管理</div>
-      </div>
-      <div class="header-badges">
-        <span class="badge blue">4 个专题</span>
-        <span class="badge success" id="doc-count">N 份文档</span>
-      </div>
-    </div>
-    <div id="docs-content"></div>
-  </div>
-
-  <!-- VIEW: 团队 -->
-  <div id="view-team" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>👥 核心团队</h1>
-        <div class="subtitle">P100 项目核心干系人</div>
-      </div>
-    </div>
-    <div id="team-content"></div>
-  </div>
-
-  <!-- VIEW: 项目排期 -->
-  <div id="view-schedule" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>⏱️ 项目排期</h1>
-        <div class="subtitle">周会纪要 · 阶段评审</div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">最近周会纪要</div>
-      </div>
-      <div id="schedule-content"></div>
-    </div>
-  </div>
-
-  <!-- VIEW: 系统监控 (iframe 嵌入) -->
-  <div id="view-system" class="view-section">
-    <div class="view-header">
-      <div>
-        <h1>🖥️ 系统监控</h1>
-        <div class="subtitle">OpenClaw 运维状态 · 设备资源 · 30秒自动刷新</div>
-      </div>
-      <div class="status-badge" id="sys-status-badge">--</div>
+  <!-- ── 概览 ── -->
+  <div id="view-overview" class="view-section active">
+    <!-- DVT Countdown -->
+    <div class="countdown-box" style="margin-bottom:12px">
+      <div class="phase-tag phase-dvt">DVT 阶段</div>
+      <div class="countdown-number" id="countdown-days">--</div>
+      <div class="countdown-label">距 DVT 出货 (2026-03-31)</div>
     </div>
 
     <!-- KPI Row -->
-    <div class="kpi-grid" style="margin-bottom:20px">
+    <div class="kpi-row three">
       <div class="kpi-card">
-        <div class="kpi-label">系统状态</div>
-        <div class="kpi-value" id="sys-status-text" style="color:var(--success)">--</div>
-        <div class="kpi-sub" id="sys-status-reason"></div>
+        <div class="kpi-label">项目阶段</div>
+        <div class="kpi-value small">DVT</div>
+        <div class="kpi-sub">EVT → DVT → PVT</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">CPU 使用率</div>
-        <div class="kpi-value" id="sys-cpu-pct" style="color:var(--text-main)">--</div>
-        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill cpu" id="sys-cpu-bar" style="width:0%">0%</div></div>
+        <div class="kpi-label">物料总数</div>
+        <div class="kpi-value small" id="kpi-bom">67</div>
+        <div class="kpi-sub">眼镜+展台</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">内存占用</div>
-        <div class="kpi-value" id="sys-mem-pct" style="color:var(--text-main)">--</div>
-        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill memory" id="sys-mem-bar" style="width:0%">0%</div></div>
-        <div class="kpi-sub" id="sys-mem-detail">--</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">活跃会话</div>
-        <div class="kpi-value" id="sys-sessions">--</div>
-        <div class="kpi-sub">Agent Sessions</div>
+        <div class="kpi-label">HIGH 风险</div>
+        <div class="kpi-value small" id="kpi-risks">--</div>
+        <div class="kpi-sub">需关注</div>
       </div>
     </div>
 
-    <!-- Main Grid -->
-    <div class="dashboard-grid">
-      <!-- Left: CPU + Memory + Context -->
-      <div>
-        <!-- CPU -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">⚙️ CPU</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px">
-            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">使用率</div><div id="sys-cpu-usage" style="font-size:24px;font-weight:700;color:var(--accent-orange)">--</div></div>
-            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">空闲率</div><div id="sys-cpu-idle" style="font-size:24px;font-weight:700;color:var(--success)">--</div></div>
-            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">核心数</div><div id="sys-cpu-cores" style="font-size:24px;font-weight:700">--</div></div>
-            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">平台</div><div id="sys-platform" style="font-size:14px;font-weight:600;word-break:break-all">--</div></div>
-          </div>
-        </div>
+    <!-- Latest Risks -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">⚠️ 关键风险</div>
+      </div>
+      <div id="overview-risks"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
 
-        <!-- Memory -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">💾 内存</div>
-          </div>
-          <div style="padding:12px 16px">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-              <div><div style="font-size:11px;color:var(--text-muted)">总内存</div><div id="sys-mem-total" style="font-size:16px;font-weight:700">--</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted)">已使用</div><div id="sys-mem-used" style="font-size:16px;font-weight:700;color:var(--accent-blue)">--</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted)">空闲</div><div id="sys-mem-free" style="font-size:16px;font-weight:700;color:var(--success)">--</div></div>
-            </div>
-            <div class="progress-bar" style="height:12px"><div class="progress-fill memory" id="sys-mem-bar2" style="width:0%">0%</div></div>
-          </div>
-        </div>
+    <!-- Latest Decisions -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📋 最新决策</div>
+      </div>
+      <div id="overview-decisions"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
 
-        <!-- Context -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">🧠 模型上下文</div>
-          </div>
-          <div style="padding:12px 16px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-              <span id="sys-ctx-used" style="font-size:14px;font-weight:600">--</span>
-              <span style="font-size:12px;color:var(--text-muted)">/ <span id="sys-ctx-limit">--</span></span>
-            </div>
-            <div class="progress-bar" style="height:10px"><div class="progress-fill context" id="sys-ctx-bar" style="width:0%">0%</div></div>
-          </div>
+    <!-- Recent Docs -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📄 最新会议</div>
+      </div>
+      <div id="overview-docs"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
+  </div>
+
+  <!-- ── BOM ── -->
+  <div id="view-bom" class="view-section">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📦 BOM 物料清单</div>
+      </div>
+      <div class="panel-body" id="bom-content">
+        <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 里程碑 ── -->
+  <div id="view-milestone" class="view-section">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📅 项目里程碑</div>
+      </div>
+      <div id="milestone-content"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
+  </div>
+
+  <!-- ── 风险 ── -->
+  <div id="view-risks" class="view-section">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">⚠️ 风险追踪</div>
+      </div>
+      <div id="risk-content"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
+  </div>
+
+  <!-- ── 文档 ── -->
+  <div id="view-docs" class="view-section">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🗂️ 项目文档</div>
+      </div>
+      <div id="docs-content"><div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">加载中...</div></div>
+    </div>
+  </div>
+
+  <!-- ── 团队 ── -->
+  <div id="view-team" class="view-section">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">👥 核心团队</div>
+      </div>
+      <div class="panel-body" id="team-content"></div>
+    </div>
+  </div>
+
+  <!-- ── 系统监控 ── -->
+  <div id="view-system" class="view-section">
+    <!-- KPI -->
+    <div class="kpi-row three" style="margin-bottom:12px">
+      <div class="kpi-card">
+        <div class="kpi-label">系统状态</div>
+        <div class="kpi-value small" id="sys-status" style="color:var(--success)">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CPU</div>
+        <div class="kpi-value small" id="sys-cpu">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">内存</div>
+        <div class="kpi-value small" id="sys-mem">--</div>
+      </div>
+    </div>
+
+    <!-- CPU Detail -->
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">⚙️ 系统资源</div></div>
+      <div class="panel-body">
+        <div class="sys-kpi">
+          <div class="sys-kpi-label">CPU</div>
+          <div class="sys-kpi-value" id="sys-cpu-pct">--</div>
+          <div class="pbar"><div class="pfill cpu" id="sys-cpu-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sys-kpi">
+          <div class="sys-kpi-label">内存</div>
+          <div class="sys-kpi-value" id="sys-mem-pct">--</div>
+          <div class="pbar"><div class="pfill mem" id="sys-mem-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sys-kpi">
+          <div class="sys-kpi-label">上下文</div>
+          <div class="sys-kpi-value" id="sys-ctx-pct">--</div>
+          <div class="pbar"><div class="pfill ctx" id="sys-ctx-bar" style="width:0%"></div></div>
         </div>
       </div>
+    </div>
 
-      <!-- Right: Processes + Server Info -->
-      <div>
-        <!-- Processes -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">⚡ 进程</div>
-            <span style="font-size:12px;color:var(--text-muted)" id="sys-proc-count">--</span>
-          </div>
-          <div id="sys-proc-list" style="max-height:320px;overflow-y:auto">
-            <div style="padding:16px;color:var(--text-muted);font-size:13px">加载中...</div>
-          </div>
-        </div>
-
-        <!-- Server Info -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">🖧 服务器信息</div>
-          </div>
-          <div style="padding:12px 16px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div><div style="font-size:11px;color:var(--text-muted)">版本</div><div id="sys-version" style="font-size:13px;font-weight:600">v1.0.0</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted)">运行时长</div><div id="sys-uptime" style="font-size:13px;font-weight:600">--</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted)">主机名</div><div id="sys-hostname" style="font-size:13px;font-weight:600">--</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted)">刷新间隔</div><div style="font-size:13px;font-weight:600">30秒</div></div>
-            </div>
-          </div>
-        </div>
+    <!-- Processes -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">⚡ 进程</div>
+        <span style="font-size:11px;color:var(--text-muted)" id="sys-proc-count">--</span>
       </div>
+      <div class="panel-body" id="sys-proc-list">
+        <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px">加载中...</div>
+      </div>
+    </div>
+
+    <!-- Server -->
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">🖧 服务器</div></div>
+      <div class="panel-body" id="sys-server-info" style="font-size:12px;color:var(--text-muted)"></div>
     </div>
   </div>
 
 </div>
 
-<div class="footer-bar">
-  P100 Project Intelligence · 最后更新: <span id="footer-update">--</span> · 深色模式: 19:00-07:00
-</div>
+<div class="footer-bar">P100 Intelligence · <span id="footer-time">--</span></div>
 
 <script>
-// ─── Theme ───
+/* ── Theme ── */
 const DARK_START = 19, DARK_END = 7;
 function isDark() {
   const h = new Date().getHours();
@@ -622,25 +394,36 @@ function isDark() {
 }
 function applyTheme() {
   document.body.classList.toggle('dark', isDark());
-  document.getElementById('theme_label').textContent = isDark() ? '🌙 夜间' : '☀️ 日间';
+  document.getElementById('theme-label').textContent = isDark() ? '🌙' : '☀️';
 }
 applyTheme();
-setInterval(() => {
-  const h = new Date().getHours(), m = new Date().getMinutes();
-  if (h === DARK_START && m === 0) applyTheme();
-}, 60000);
 
-// ─── Nav ───
+/* ── Time ── */
+function updateTime() {
+  const t = new Date().toLocaleTimeString('zh-CN', {hour12:false});
+  document.getElementById('header-time').textContent = t;
+  document.getElementById('footer-time').textContent = t;
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+/* ── Tab Navigation ── */
 let activeTab = 'overview';
 let sysInterval = null;
-document.querySelectorAll('.nav-item').forEach(n => {
-  n.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.view-section').forEach(x => x.classList.remove('active-view'));
-    n.classList.add('active');
-    document.getElementById('view-' + n.dataset.target).classList.add('active-view');
-    activeTab = n.dataset.target;
-    if (activeTab === 'system') {
+
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+    document.querySelectorAll('.view-section').forEach(function(x) { x.classList.remove('active'); });
+    t.classList.add('active');
+    activeTab = t.dataset.target;
+    document.getElementById('view-' + activeTab).classList.add('active');
+    if (activeTab === 'bom') renderBOM();
+    else if (activeTab === 'risks') renderRiskContent();
+    else if (activeTab === 'docs') renderDocsContent();
+    else if (activeTab === 'team') renderTeam();
+    else if (activeTab === 'milestone') renderMilestoneContent();
+    else if (activeTab === 'system') {
       fetchSystem();
       if (!sysInterval) sysInterval = setInterval(fetchSystem, 30000);
     } else {
@@ -649,350 +432,255 @@ document.querySelectorAll('.nav-item').forEach(n => {
   });
 });
 
-// ─── Helpers ───
-function updateTime() {
-  const t = new Date().toLocaleTimeString('zh-CN', {hour12:false});
-  document.getElementById('last_update').textContent = t;
-  document.getElementById('footer-update').textContent = t;
-}
-updateTime();
-setInterval(updateTime, 1000);
+/* ── Helpers ── */
+function fmtB(b) { if (!b) return '0 B'; var i = Math.floor(Math.log(b)/Math.log(1024)); return parseFloat((b/Math.pow(1024,i)).toFixed(1))+' BKMGT'.charAt(i); }
+function fmtT(n) { if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
+function fmtU(s) { if (s<60) return s+'秒'; if (s<3600) return Math.round(s/60)+'分'; if (s<86400) return (s/3600).toFixed(1)+'时'; return (s/86400).toFixed(1)+'天'; }
 
-// ─── DVT Countdown ───
+/* ── Countdown ── */
 function updateCountdown() {
-  const target = new Date('2026-03-31');
-  const now = new Date();
-  const diff = Math.ceil((target - now) / (1000*60*60*24));
-  const el = document.getElementById('kpi-countdown');
+  var target = new Date('2026-03-31');
+  var now = new Date();
+  var diff = Math.ceil((target - now) / (1000*60*60*24));
+  var el = document.getElementById('countdown-days');
   if (el) {
-    el.textContent = diff + '天';
-    el.style.color = diff < 7 ? 'var(--danger)' : diff < 14 ? 'var(--warning)' : 'var(--accent-blue)';
+    el.textContent = diff > 0 ? diff + '天' : '已到期';
+    el.style.color = diff <= 7 ? 'var(--danger)' : diff <= 14 ? 'var(--warning)' : 'var(--accent-blue)';
   }
 }
-updateCountdown();
 
-// ─── Render Functions ───
+/* ── Overview Render ── */
 function renderRisks(data) {
-  const el = document.getElementById('overview-risks');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="risk-desc">暂无 HIGH 风险 ✅</div>';
-    return;
-  }
-  el.innerHTML = data.map(r => `
-    <div class="risk-item">
-      <div class="risk-header">
-        <span>[${r.id || '?'}] ${r.title || '未知风险'}</span>
-        <span style="color:var(--danger);font-weight:700">${r.severity || 'HIGH'}</span>
-      </div>
-      <div class="risk-desc">${r.description || r.impact || ''}</div>
-    </div>`).join('');
-  document.getElementById('kpi-risks').textContent = data.length;
+  document.getElementById('kpi-risks').textContent = (data && data.length) ? data.length : '--';
+  var el = document.getElementById('overview-risks');
+  if (!el) return;
+  if (!data || data.length === 0) { el.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">暂无风险</div>'; return; }
+  el.innerHTML = data.slice(0, 5).map(function(r) {
+    return '<div class="risk-item">' +
+      '<div class="risk-dot red"></div>' +
+      '<div><div style="margin-bottom:3px"><span class="risk-id">' + (r.id||'') + '</span><span class="tag high">HIGH</span></div>' +
+      '<div class="risk-title">' + (r.title||'') + '</div>' +
+      '<div class="risk-desc">' + (r.description||'') + '</div></div></div>';
+  }).join('');
 }
 
-function renderMilestones(data) {
-  const el = document.getElementById('overview-milestones');
-  if (!data || !Object.keys(data).length) {
-    el.innerHTML = '<div class="risk-desc">暂无里程碑数据</div>';
-    return;
-  }
-  const entries = Object.entries(data);
-  el.innerHTML = entries.map(([date, info]) => {
-    const st = info.status || 'pending';
-    const cls = {done:'status-done',progress:'status-progress',pending:'status-pending'}[st] || 'status-pending';
-    const icon = {done:'✅',progress:'🔄',pending:'⏳'}[st] || '⏳';
-    return `<div class="milestone-item">
-      <span class="milestone-name">${info.name || date}</span>
-      <span><span class="milestone-date">${date}</span> <span class="milestone-status ${cls}">${icon}</span></span>
-    </div>`;
+function renderDecisions(data) {
+  var el = document.getElementById('overview-decisions');
+  if (!el) return;
+  if (!data || data.length === 0) { el.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">暂无决策</div>'; return; }
+  el.innerHTML = data.slice(0, 4).map(function(d) {
+    return '<div class="decision-item">' +
+      '<div class="decision-date">' + (d.date||'') + '</div>' +
+      '<div class="decision-text">' + (d.text||'') + '</div></div>';
   }).join('');
 }
 
 function renderDocs(data) {
-  const el = document.getElementById('overview-docs');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="risk-desc">暂无文档</div>';
-    return;
-  }
-  el.innerHTML = data.slice(0,5).map(d => `
-    <div class="log-entry">
-      <span class="log-time">${d.date || ''}</span>
-      <span>${d.title || '未知文档'}</span>
-    </div>`).join('');
-  document.getElementById('doc-count').textContent = data.length + ' 份文档';
+  var el = document.getElementById('overview-docs');
+  if (!el) return;
+  if (!data || data.length === 0) { el.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">暂无文档</div>'; return; }
+  el.innerHTML = data.slice(0, 5).map(function(d) {
+    return '<div class="doc-row">' +
+      '<div class="doc-icon">📄</div>' +
+      '<div class="doc-title">' + (d.title||'') + '</div>' +
+      '<div class="doc-date">' + (d.date||'') + '</div></div>';
+  }).join('');
 }
 
-function renderDecisions(data) {
-  const el = document.getElementById('overview-decisions');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="risk-desc">暂无近期决策记录</div>';
-    return;
-  }
-  el.innerHTML = data.slice(0,3).map(d => `
-    <div class="log-entry">
-      <span class="log-time">${d.date || ''}</span>
-      <span>${d.text || d}</span>
-    </div>`).join('');
+/* ── Milestone Content ── */
+function renderMilestoneContent() {
+  fetch('/api/p100').then(function(r) { return r.json(); }).then(function(data) {
+    var ml = data.milestones || {};
+    var el = document.getElementById('milestone-content');
+    if (!el) return;
+    var items = [
+      ['evt_review_date', 'EVT 评审'],
+      ['s200_assembly', 'S200 样机组装'],
+      ['posm_making', 'POSM 制作'],
+      ['stand_surface_finish', '展台表面处理'],
+      ['stand_final_check', '展台成品验收'],
+      ['software_fix', '软件 Bug 收敛'],
+      ['dvt_shipment', 'DVT 出货'],
+    ];
+    var today = new Date().toISOString().slice(0,10);
+    el.innerHTML = items.map(function(item) {
+      var key = item[0], label = item[1];
+      var val = ml[key];
+      if (!val) return '';
+      var done = val < today;
+      return '<div class="ml-item"><div class="ml-dot' + (done ? ' done' : '') + '"></div>' +
+        '<div class="ml-date">' + val + '</div>' +
+        '<div class="ml-text">' + label + '</div>' +
+        (done ? '<span class="badge green">已完成</span>' : '<span class="badge blue">进行中</span>') +
+        '</div>';
+    }).join('');
+  }).catch(function() {});
 }
 
-// ─── Fetch & Render ───
+/* ── BOM Render ── */
+function renderBOM() {
+  var el = document.getElementById('bom-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px">加载中...</div>';
+  fetch('/api/p100/bom').then(function(r) { return r.json(); }).then(function(data) {
+    el.innerHTML = Object.entries(data).map(function(entry) {
+      var cat = entry[0], items = entry[1];
+      return '<div class="bom-cat">' +
+        '<div class="bom-cat-title">' + cat + ' <span class="count">' + items.length + '种</span></div>' +
+        '<div class="bom-tags">' + items.map(function(i) { return '<span class="bom-tag">'+i+'</span>'; }).join('') + '</div></div>';
+    }).join('');
+  }).catch(function() {
+    el.innerHTML = '<div style="color:var(--danger);padding:16px;font-size:12px">加载失败</div>';
+  });
+}
+
+/* ── Risk Content ── */
+function renderRiskContent() {
+  var el = document.getElementById('risk-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px">加载中...</div>';
+  fetch('/api/p100/risks').then(function(r) { return r.json(); }).then(function(data) {
+    var items = data.items || [];
+    if (items.length === 0) { el.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">暂无风险</div>'; return; }
+    el.innerHTML = items.map(function(r) {
+      var dot = r.severity === 'HIGH' ? 'red' : r.severity === 'MEDIUM-HIGH' ? 'orange' : 'yellow';
+      var tagClass = r.severity === 'HIGH' ? 'high' : r.severity === 'MEDIUM-HIGH' ? 'medium' : 'low';
+      return '<div class="risk-item">' +
+        '<div class="risk-dot ' + dot + '"></div>' +
+        '<div style="flex:1"><div style="margin-bottom:3px"><span class="risk-id">' + (r.id||'') + '</span><span class="tag ' + tagClass + '">' + (r.severity||'') + '</span></div>' +
+        '<div class="risk-title">' + (r.title||'') + '</div>' +
+        '<div class="risk-desc">' + (r.description||'') + '</div>' +
+        (r.impact ? '<div class="risk-desc" style="color:var(--accent-blue);margin-top:3px">影响: ' + r.impact + '</div>' : '') + '</div></div>';
+    }).join('');
+  }).catch(function() {
+    el.innerHTML = '<div style="color:var(--danger);padding:16px;font-size:12px">加载失败</div>';
+  });
+}
+
+/* ── Docs Content ── */
+function renderDocsContent() {
+  var el = document.getElementById('docs-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px">加载中...</div>';
+  fetch('/api/p100/docs').then(function(r) { return r.json(); }).then(function(data) {
+    var items = data.items || [];
+    if (items.length === 0) { el.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">暂无文档</div>'; return; }
+    el.innerHTML = items.map(function(d) {
+      return '<div class="doc-row">' +
+        '<div class="doc-icon">📄</div>' +
+        '<div class="doc-title">' + (d.title||'') + '</div>' +
+        '<div class="doc-date">' + (d.date||'') + '</div></div>';
+    }).join('');
+  }).catch(function() {
+    el.innerHTML = '<div style="color:var(--danger);padding:16px;font-size:12px">加载失败</div>';
+  });
+}
+
+/* ── Team ── */
+function renderTeam() {
+  var el = document.getElementById('team-content');
+  if (!el) return;
+  var team = [
+    { name: '陈翀', role: 'PM · 项目负责人', icon: '👤' },
+    { name: '盛远征', role: 'TPM · 可靠性测试', icon: '🔬' },
+    { name: '申子立', role: 'TPM · 软件开发', icon: '💻' },
+    { name: '何维', role: 'TPM · 产品研发', icon: '🎯' },
+    { name: '杜世杰', role: '结构负责人', icon: '⚙️' },
+  ];
+  el.innerHTML = team.map(function(m) {
+    return '<div class="team-item">' +
+      '<div class="avatar">' + m.icon + '</div>' +
+      '<div><div class="team-name">' + m.name + '</div><div class="team-role">' + m.role + '</div></div></div>';
+  }).join('');
+}
+
+/* ── System Monitor ── */
+async function fetchSystem() {
+  try {
+    var res = await fetch('/api/status');
+    if (!res.ok) throw new Error();
+    var d = await res.json();
+
+    var level = (d.status && d.status.level) ? d.status.level : 'operational';
+    var statusEl = document.getElementById('sys-status');
+    if (level === 'operational') { statusEl.textContent = '正常'; statusEl.style.color = 'var(--success)'; }
+    else if (level === 'warning' || level === 'high_load') { statusEl.textContent = '负载'; statusEl.style.color = 'var(--warning)'; }
+    else if (level === 'frozen') { statusEl.textContent = '缓慢'; statusEl.style.color = 'var(--warning)'; }
+    else if (level === 'crashed') { statusEl.textContent = '崩溃'; statusEl.style.color = 'var(--danger)'; }
+    else { statusEl.textContent = '正常'; statusEl.style.color = 'var(--success)'; }
+
+    var cpu = d.cpu || {};
+    var cpuPct = cpu.usage || 0;
+    document.getElementById('sys-cpu').textContent = cpuPct + '%';
+    document.getElementById('sys-cpu-pct').textContent = cpuPct + '%';
+    document.getElementById('sys-cpu-bar').style.width = cpuPct + '%';
+
+    var mem = d.memory || {};
+    var memPct = mem.percentage || 0;
+    document.getElementById('sys-mem').textContent = memPct + '%';
+    document.getElementById('sys-mem-pct').textContent = fmtB(mem.used) + ' / ' + fmtB(mem.total);
+    document.getElementById('sys-mem-bar').style.width = memPct + '%';
+
+    var ctx = d.context || {};
+    var ctxPct = ctx.pct || 0;
+    document.getElementById('sys-ctx-pct').textContent = fmtT(ctx.used || 0) + ' / ' + fmtT(ctx.limit || 205376);
+    document.getElementById('sys-ctx-bar').style.width = Math.min(ctxPct, 100) + '%';
+
+    var procs = d.processes || [];
+    document.getElementById('sys-proc-count').textContent = procs.length + ' 个';
+    var procEl = document.getElementById('sys-proc-list');
+    if (procs.length === 0) { procEl.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">无数据</div>'; }
+    else {
+      procEl.innerHTML = procs.map(function(p) {
+        return '<div class="proc-item">' +
+          '<div><div class="proc-name">' + (p.name||'Process') + '</div><div class="proc-desc">' + (p.desc||'') + '</div></div>' +
+          '<div class="proc-nums"><div class="proc-cpu">' + p.cpu + '%</div><div class="proc-mem">MEM ' + p.mem + '%</div></div></div>';
+      }).join('');
+    }
+
+    var srv = d.server || {};
+    document.getElementById('sys-server-info').innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<div>版本: <strong>' + (srv.version||'v1.0.0') + '</strong></div>' +
+      '<div>运行时长: <strong>' + fmtU(srv.uptime||0) + '</strong></div>' +
+      '<div>主机: <strong>' + (srv.hostname||'--') + '</strong></div>' +
+      '<div>会话: <strong>' + (d.sessions != null ? d.sessions : '--') + '</strong></div>' +
+      '</div>';
+  } catch(e) { console.error('System fetch error', e); }
+}
+
+/* ── Fetch P100 ── */
 async function fetchP100() {
   try {
-    const res = await fetch('/api/p100');
+    var res = await fetch('/api/p100');
     if (!res.ok) throw new Error();
-    const data = await res.json();
-    
-    // DVT countdown
+    var data = await res.json();
+
     updateCountdown();
-    
-    // Risks
+
     if (data.critical_risks && data.critical_risks.length) {
       renderRisks(data.critical_risks);
     } else {
-      // 从所有文档提取 HIGH 风险
       try {
-        const riskData = await (await fetch('/api/p100/risks')).json();
+        var riskData = await (await fetch('/api/p100/risks')).json();
         renderRisks(riskData.items || []);
       } catch(e) { renderRisks([]); }
     }
-    
-    // Milestones
-    renderMilestones(data.milestones || {});
-    
-    // Docs
-    renderDocs(data.recent_docs || []);
-    
-    // Decisions
+
     if (data.decisions) renderDecisions(data.decisions);
     else renderDecisions([]);
-    
-    // BOM count
+
+    renderDocs(data.recent_docs || []);
+
     if (data.bom) {
-      document.getElementById('kpi-bom').textContent = data.bom.total || '67';
+      var bomEl = document.getElementById('kpi-bom');
+      if (bomEl) bomEl.textContent = data.bom.total || '67';
     }
-    
-  } catch(e) {
-    console.error('P100 fetch error', e);
-    renderRisks([]);
-    renderMilestones({});
-    renderDocs([]);
-    renderDecisions([]);
-  }
+  } catch(e) { console.error('P100 fetch error', e); }
 }
 
-// ─── System Monitor ───
-async function fetchSystem() {
-  try {
-    const res = await fetch('/api/status');
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-
-    const badge = document.getElementById('sys-status-badge');
-    const statusText = document.getElementById('sys-status-text');
-    const reasonEl = document.getElementById('sys-status-reason');
-    const level = d.status && d.status.level ? d.status.level : 'operational';
-    const reason = d.status && d.status.reason ? d.status.reason : '';
-    badge.className = 'status-badge';
-    if (level === 'operational') { badge.textContent = '正常'; statusText.textContent = '正常运行'; statusText.style.color = 'var(--success)'; }
-    else if (level === 'warning' || level === 'high_load') { badge.textContent = '警告'; badge.classList.add('warn'); statusText.textContent = '负载警告'; statusText.style.color = '#d97706'; }
-    else if (level === 'frozen') { badge.textContent = '缓慢'; badge.classList.add('warn'); statusText.textContent = '响应缓慢'; statusText.style.color = '#d97706'; }
-    else if (level === 'crashed') { badge.textContent = '崩溃'; badge.classList.add('error'); statusText.textContent = '服务崩溃'; statusText.style.color = 'var(--danger)'; }
-    else { badge.textContent = '正常'; statusText.textContent = '正常'; statusText.style.color = 'var(--success)'; }
-    reasonEl.textContent = reason;
-
-    const cpu = d.cpu || {};
-    const cpuPct = cpu.usage || 0;
-    document.getElementById('sys-cpu-pct').textContent = cpuPct + '%';
-    document.getElementById('sys-cpu-bar').style.width = cpuPct + '%';
-    document.getElementById('sys-cpu-usage').textContent = cpuPct + '%';
-    document.getElementById('sys-cpu-idle').textContent = (cpu.idle || 0) + '%';
-    document.getElementById('sys-cpu-cores').textContent = cpu.cores || '--';
-    document.getElementById('sys-platform').textContent = (d.server && d.server.platform ? d.server.platform : '--').toUpperCase();
-
-    const mem = d.memory || {};
-    const memPct = mem.percentage || 0;
-    document.getElementById('sys-mem-pct').textContent = memPct + '%';
-    document.getElementById('sys-mem-bar').style.width = memPct + '%';
-    document.getElementById('sys-mem-bar2').style.width = memPct + '%';
-    document.getElementById('sys-mem-total').textContent = fmtB(mem.total);
-    document.getElementById('sys-mem-used').textContent = fmtB(mem.used);
-    document.getElementById('sys-mem-free').textContent = fmtB(mem.free);
-    document.getElementById('sys-mem-detail').textContent = fmtB(mem.used) + ' / ' + fmtB(mem.total);
-
-    document.getElementById('sys-sessions').textContent = d.sessions != null ? d.sessions : '--';
-
-    const ctx = d.context || {};
-    document.getElementById('sys-ctx-used').textContent = fmtT(ctx.used || 0) + ' tokens';
-    document.getElementById('sys-ctx-limit').textContent = fmtT(ctx.limit || 205376) + ' tokens';
-    document.getElementById('sys-ctx-bar').style.width = Math.min(ctx.pct || 0, 100) + '%';
-
-    document.getElementById('sys-version').textContent = (d.server && d.server.version) || 'v1.0.0';
-    document.getElementById('sys-hostname').textContent = (d.server && d.server.hostname) || '--';
-    document.getElementById('sys-uptime').textContent = fmtU(d.server && d.server.uptime ? d.server.uptime : 0);
-
-    const procs = d.processes || [];
-    document.getElementById('sys-proc-count').textContent = procs.length + ' 个';
-    const procEl = document.getElementById('sys-proc-list');
-    if (procs.length === 0) {
-      procEl.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px">无进程数据</div>';
-    } else {
-      procEl.innerHTML = procs.map(function(p) {
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border-color);font-size:13px">' +
-          '<div><div style="font-weight:600;color:var(--text-main)">' + (p.name||'Process') + '</div><div style="font-size:11px;color:var(--text-muted)">' + (p.desc||'') + '</div></div>' +
-          '<div style="text-align:right"><div style="font-weight:700;color:var(--accent-orange)">' + p.cpu + '%</div><div style="font-size:11px;color:var(--text-muted)">MEM ' + p.mem + '%</div></div></div>';
-      }).join('');
-    }
-    updateTime();
-  } catch(e) { console.error('System fetch error', e); }
-}
-function fmtB(b) { if (!b) return '0 B'; var i = Math.floor(Math.log(b)/Math.log(1024)); return parseFloat((b/Math.pow(1024,i)).toFixed(1))+' BKMGT'.charAt(i); }
-function fmtT(n) { if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
-function fmtU(s) { if (s<60) return s+'秒'; if (s<3600) return Math.round(s/60)+'分钟'; if (s<86400) return (s/3600).toFixed(1)+'小时'; return (s/86400).toFixed(1)+'天'; }
-
-// ─── BOM Render ───
-async function renderBOM() {
-  const el = document.getElementById('bom-content');
-  el.innerHTML = '<div class="panel"><div class="panel-header"><div class="panel-title">📋 物料分类</div></div><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
-  try {
-    const res = await fetch('/api/p100/bom');
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    el.innerHTML = Object.entries(data).map(([cat, items]) => `
-      <div class="panel" style="margin-bottom:16px">
-        <div class="bom-category-title">${cat} <span style="color:var(--text-muted);font-weight:400;font-size:12px">(${items.length}种)</span></div>
-        <div class="bom-items">${items.map(i => `<span class="bom-item">${i}<span class="qty"></span></span>`).join('')}</div>
-      </div>`).join('');
-  } catch(e) {
-    el.innerHTML = '<div class="panel"><div class="panel-title">BOM 数据加载失败</div></div>';
-  }
-}
-
-// Risk Content
-async function renderRiskContent() {
-  const el = document.getElementById('risk-content');
-  el.innerHTML = '<div class="panel"><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
-  try {
-    const res = await fetch('/api/p100/risks');
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    if (!data.items || !data.items.length) {
-      el.innerHTML = '<div class="panel"><div class="risk-desc">暂无风险记录 ✅</div></div>';
-      return;
-    }
-    el.innerHTML = data.items.map(r => `
-      <div class="panel" style="margin-bottom:16px">
-        <div class="risk-item ${r.severity === 'HIGH' ? '' : 'warning'}">
-          <div class="risk-header">
-            <span>[${r.id || '?'}] ${r.title || '未知风险'}</span>
-            <span style="color:${r.severity==='HIGH'?'var(--danger)':'var(--warning)'};font-weight:700">${r.severity || 'MEDIUM'}</span>
-          </div>
-          <div class="risk-desc">${r.description || ''}</div>
-          ${r.impact ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px">影响: ${r.impact}</div>` : ''}
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    el.innerHTML = '<div class="panel"><div class="risk-title">风险数据加载失败</div></div>';
-  }
-}
-
-// Docs Content
-async function renderDocsContent() {
-  const el = document.getElementById('docs-content');
-  el.innerHTML = '<div class="panel"><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
-  try {
-    const res = await fetch('/api/p100/docs');
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    if (!data.items || !data.items.length) {
-      el.innerHTML = '<div class="panel"><div class="risk-desc">暂无文档</div></div>';
-      return;
-    }
-    el.innerHTML = `<div class="panel" style="padding:0;overflow:hidden">
-      <table class="data-table">
-        <thead><tr><th>文档标题</th><th>类型</th><th>日期</th><th>来源</th></tr></thead>
-        <tbody>
-          ${data.items.map(d => `<tr>
-            <td style="font-weight:500">${d.title || '未知'}</td>
-            <td><span class="tag phase-dvt">${d.type || '文档'}</span></td>
-            <td style="color:var(--text-muted)">${d.date || ''}</td>
-            <td><span class="tag" style="background:#DBEAFE;color:#1E40AF">飞书</span></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  } catch(e) {
-    el.innerHTML = '<div class="panel"><div class="risk-title">文档数据加载失败</div></div>';
-  }
-}
-
-// Team
-function renderTeam() {
-  const el = document.getElementById('team-content');
-  el.innerHTML = `<div class="panel">
-    <div class="panel-header"><div class="panel-title">核心干系人</div></div>
-    <div class="team-item">
-      <div class="team-info">
-        <div class="avatar" style="color:var(--accent-blue)">陈</div>
-        <div><div class="role-name">陈翀 (Passy)</div><div class="role-title">产品负责人 · PM</div></div>
-      </div>
-      <div class="status-dot dot-green"></div>
-    </div>
-    <div class="team-item">
-      <div class="team-info">
-        <div class="avatar" style="color:var(--accent-purple)">盛</div>
-        <div><div class="role-name">盛远征</div><div class="role-title">项目经理 · TPM</div></div>
-      </div>
-      <div class="status-dot dot-green"></div>
-    </div>
-    <div class="team-item">
-      <div class="team-info">
-        <div class="avatar" style="color:var(--warning)">申</div>
-        <div><div class="role-name">申子立</div><div class="role-title">项目经理 · TPM</div></div>
-      </div>
-      <div class="status-dot dot-green"></div>
-    </div>
-    <div class="team-item">
-      <div class="team-info">
-        <div class="avatar" style="color:var(--danger)">何</div>
-        <div><div class="role-name">何维</div><div class="role-title">项目经理 · TPM</div></div>
-      </div>
-      <div class="status-dot dot-yellow"></div>
-    </div>
-    <div class="team-item">
-      <div class="team-info">
-        <div class="avatar" style="color:var(--success)">杜</div>
-        <div><div class="role-name">杜世杰</div><div class="role-title">结构工程师</div></div>
-      </div>
-      <div class="status-dot dot-green"></div>
-    </div>
-  </div>
-  <div class="panel" style="margin-top:16px">
-    <div class="panel-header"><div class="panel-title">项目角色说明</div></div>
-    <div class="risk-desc">TPM (Technical Program Manager): 技术项目经理，负责项目排期和技术协调<br>PM (Product Manager): 产品经理，负责产品定义和需求管理</div>
-  </div>`;
-}
-
-// Schedule
-function renderSchedule(data) {
-  const el = document.getElementById('schedule-content');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="risk-desc">暂无排期数据</div>';
-    return;
-  }
-  el.innerHTML = data.map(d => `
-    <div class="log-entry">
-      <span class="log-time">${d.date || ''}</span>
-      <span>${d.title || '未知'}</span>
-    </div>`).join('');
-}
-
-// ─── API Routes (server-side) ───
-// The server.js already has /api/p100 - we need more sub-routes
-// For now, reuse the main p100 data for tab content
-
-// Init
+/* ── Init ── */
 fetchP100();
-renderTeam();
-setInterval(fetchP100, 60000);
 </script>
 </body>
 </html>
