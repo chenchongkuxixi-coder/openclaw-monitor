@@ -58,6 +58,21 @@ openclaw-monitor/
 - **前端**: 原生 HTML/CSS/JavaScript
 - **样式**: VT323 像素字体
 
+## 公开访问配置
+
+使用 Cloudflare Tunnel 将服务暴露到公网：
+
+```bash
+# 启动 tunnel（每次重启会生成新 URL）
+cd ~/.openclaw/workspace/openclaw-monitor
+cloudflared tunnel --url http://localhost:8766
+```
+
+**注意事项：**
+- Mac 关机或休眠后链接会失效
+- 每次重启 tunnel 会生成新 URL（固定 URL 需注册 Cloudflare 账号）
+- 日志位置：`~/.openclaw/workspace/openclaw-monitor/tunnel.log`
+
 ## License
 
 MIT © chenchongkuxixi-coder

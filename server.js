@@ -1,6 +1,18 @@
 /**
  * OpenClaw 运维监控面板 - 后端服务
  * 提供真实系统数据 API + HTTP Basic Auth 保护
+ *
+ * ============================================================
+ * 公开访问配置（Cloudflare Tunnel）
+ * ============================================================
+ * 启动: cloudflared tunnel --url http://localhost:8766
+ * 日志: ~/.openclaw/workspace/openclaw-monitor/tunnel.log
+ *
+ * 注意事项:
+ * - Mac 关机或休眠后链接失效
+ * - 每次重启 tunnel 会生成新 URL
+ * - 固定 URL 需注册 Cloudflare 账号
+ * ============================================================
  */
 
 const http = require('http');
@@ -106,12 +118,21 @@ function getMemoryUsage() {
 // 获取 OpenClaw 任务队列状态
 function getTaskStatus() {
   return new Promise((resolve) => {
-    exec('ps aux | grep -c "[o]penclaw" 2>/dev/null || echo 0', (err, stdout) => {
-      const total = parseInt(stdout.trim()) || 0;
-      resolve({
-        running: total > 0 ? 1 : 0,
-        queued: 0,
-        total
+    // 先尝试快速获取 sessions 数量（解析 gateway 日志）
+    exec('tail -50 /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log 2>/dev/null | grep -i "session" | tail -1 || echo ""', { maxBuffer: 64 * 1024, timeout: 3000 }, (err, stdout) => {
+      let sessionsFromLog = 0;
+      const logMatch = stdout.match(/sessions?\s*(\d+)/i);
+      if (logMatch) sessionsFromLog = parseInt(logMatch[1]) || 0;
+      
+      // 同时检查 openclaw 进程数
+      exec('ps aux | grep -c "[o]penclaw" 2>/dev/null || echo 0', { maxBuffer: 64 * 1024, timeout: 3000 }, (err2, stdout2) => {
+        const processCount = parseInt(stdout2.trim()) || 0;
+        
+        resolve({
+          running: processCount > 0 ? processCount : 1,
+          queued: 0,
+          total: sessionsFromLog > 0 ? sessionsFromLog : processCount
+        });
       });
     });
   });
