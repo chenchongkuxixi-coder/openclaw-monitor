@@ -56,7 +56,9 @@ let systemCache = {
   cpu: { usage: 0, idle: 100 },
   memory: { total: 0, used: 0, free: 0, percentage: 0 },
   context: { used: 0, limit: 205376, pct: 0 },
-  processes: []
+  processes: [],
+  sessions: 0,
+  status: { level: 'operational', reason: '' }
 };
 
 // 获取 CPU 使用率 (macOS)
@@ -171,16 +173,69 @@ function getSessionCount() {
   });
 }
 
+// 检查 OpenClaw 健康状态
+function checkOpenClawHealth() {
+  return new Promise((resolve) => {
+    // 1. 检查 Gateway 进程是否存在
+    exec('ps aux | grep "openclaw-gateway" | grep -v grep | wc -l', { maxBuffer: 4096, timeout: 3000 }, (err, stdout) => {
+      const count = parseInt(stdout.trim()) || 0;
+      if (count === 0) {
+        resolve({ status: 'crashed', reason: 'Gateway 进程不存在', uptime: 0 });
+        return;
+      }
+      
+      // 2. 检查 Gateway 是否响应
+      const http = require('http');
+      const req = http.get('http://127.0.0.1:27239/health', { timeout: 3000 }, (res) => {
+        resolve({ status: 'operational', reason: '', uptime: 1 });
+      });
+      req.on('error', () => {
+        resolve({ status: 'frozen', reason: 'Gateway 进程存在但无响应', uptime: 1 });
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ status: 'frozen', reason: 'Gateway 健康检查超时', uptime: 1 });
+      });
+    });
+  });
+}
+
+// 根据 CPU/内存判断系统负载状态
+function getSystemStatus(cpuUsage, memPercentage) {
+  if (cpuUsage > 80 || memPercentage > 90) {
+    return { status: 'high_load', reason: `CPU ${cpuUsage}% / 内存 ${memPercentage}%` };
+  }
+  if (cpuUsage > 60 || memPercentage > 75) {
+    return { status: 'warning', reason: `CPU ${cpuUsage}% / 内存 ${memPercentage}%` };
+  }
+  return { status: 'normal', reason: '' };
+}
+
 // 更新所有系统数据
 async function updateSystemData() {
   try {
-    const [cpu, memory, context, processes, sessions] = await Promise.all([
+    const [cpu, memory, context, processes, sessions, health] = await Promise.all([
       getCpuUsage(),
       getMemoryUsage(),
       getContextUsage(),
       getProcessList(),
-      getSessionCount()
+      getSessionCount(),
+      checkOpenClawHealth()
     ]);
+    
+    // 综合判断状态优先级: crashed > frozen > high_load > warning > operational
+    let level = 'operational';
+    let reason = '';
+    
+    // OpenClaw 自身状态优先
+    if (health.status === 'crashed') { level = 'crashed'; reason = health.reason; }
+    else if (health.status === 'frozen') { level = 'frozen'; reason = health.reason; }
+    else {
+      // 系统负载状态
+      const sys = getSystemStatus(cpu.usage, memory.percentage);
+      if (sys.status === 'high_load') { level = 'high_load'; reason = sys.reason; }
+      else if (sys.status === 'warning') { level = 'warning'; reason = sys.reason; }
+    }
     
     systemCache = {
       timestamp: Date.now(),
@@ -188,7 +243,8 @@ async function updateSystemData() {
       memory,
       context,
       processes,
-      sessions
+      sessions,
+      status: { level, reason }
     };
   } catch (error) {
     console.error('Error updating system data:', error);
@@ -249,6 +305,7 @@ function handleApi(req, res) {
       },
       processes: systemCache.processes,
       sessions: systemCache.sessions,
+      status: systemCache.status,
       refreshInterval: REFRESH_INTERVAL
     };
     res.end(JSON.stringify(response));

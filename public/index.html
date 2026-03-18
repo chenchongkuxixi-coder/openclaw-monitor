@@ -126,9 +126,53 @@
     animation: pulse 2s infinite;
   }
   
+  .status-warn {
+    text-align: center;
+    color: #ffaa00;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #2a2a0a;
+    border: 2px solid #ffaa00;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #ffaa00;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-error {
+    text-align: center;
+    color: #ff4444;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #2a0a0a;
+    border: 2px solid #ff4444;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #ff4444;
+    animation: pulse 1s infinite;
+  }
+  
+  .status-crashed {
+    text-align: center;
+    color: #ff0000;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #1a0000;
+    border: 2px solid #ff0000;
+    border-radius: 4px;
+    text-shadow: 0 0 15px #ff0000;
+    animation: blink 0.5s infinite;
+  }
+  
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
   
   .scanlines {
@@ -236,7 +280,7 @@
     <div class="row"><span class="label">Runtime</span><span class="value">direct</span></div>
   </div>
   
-  <div class="status-ok">✅ OPERATIONAL</div>
+  <div class="status-ok" id="status_panel">✅ OPERATIONAL</div>
   
   <div class="footer">Last updated: <span id="last_update">--</span></div>
 </div>
@@ -244,6 +288,14 @@
 <script>
 const API_BASE = window.location.origin;
 const REFRESH_INTERVAL = 30000;
+
+const STATUS_CONFIG = {
+  operational: { text: '✅ OPERATIONAL', class: 'status-ok' },
+  warning: { text: '⚠️ 负载偏高', class: 'status-warn' },
+  high_load: { text: '🚨 高负载警告', class: 'status-error' },
+  frozen: { text: '❄️ OPENCLAW 卡死', class: 'status-error' },
+  crashed: { text: '💀 OPENCLAW 已崩溃', class: 'status-crashed' }
+};
 
 function updateTime() {
   document.getElementById('time').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
@@ -302,6 +354,12 @@ async function fetchAllData() {
     } else {
       procList.innerHTML = '<div class="process-item"><span style="color:#666">No processes found</span></div>';
     }
+    
+    // Update status
+    const statusConfig = STATUS_CONFIG[data.status.level] || STATUS_CONFIG.operational;
+    const statusPanel = document.getElementById('status_panel');
+    statusPanel.className = statusConfig.class;
+    statusPanel.textContent = statusConfig.text + (data.status.reason ? ' - ' + data.status.reason : '');
     
     // Remove loading
     document.querySelectorAll('.value').forEach(el => el.classList.remove('loading'));
