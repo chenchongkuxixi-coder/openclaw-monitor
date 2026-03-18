@@ -295,8 +295,8 @@ async function fetchAllData() {
     if (data.processes && data.processes.length > 0) {
       procList.innerHTML = data.processes.map(p => 
         `<div class="process-item">
-          <span class="process-name">${p.name}</span>
-          <span><span class="process-cpu">CPU ${p.cpu.toFixed(1)}%</span> · <span class="process-mem">MEM ${p.mem.toFixed(1)}%</span></span>
+          <span><span class="process-name">${p.name}</span> · ${p.desc}</span>
+          <span><span class="process-cpu">${p.cpu.toFixed(1)}%</span> · <span class="process-mem">${p.mem.toFixed(1)}%</span></span>
         </div>`
       ).join('');
     } else {

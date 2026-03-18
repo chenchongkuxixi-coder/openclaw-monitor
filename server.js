@@ -122,7 +122,7 @@ function getContextUsage() {
 // 获取运行中的进程列表
 function getProcessList() {
   return new Promise((resolve) => {
-    exec('ps aux | grep -E "openclaw|openclaw-node|openclaw-gateway|openclaw-monitor" | grep -v grep | head -10', { maxBuffer: 64 * 1024 }, (err, stdout) => {
+    exec('ps aux | grep -E "openclaw-gateway|openclaw-node|openclaw-monitor|evolver|openclaw$" | grep -v grep | head -10', { maxBuffer: 64 * 1024 }, (err, stdout) => {
       if (err || !stdout.trim()) { resolve([]); return; }
       
       const lines = stdout.trim().split('\n');
@@ -132,15 +132,28 @@ function getProcessList() {
         const mem = parseFloat(parts[3]) || 0;
         const cmd = parts.slice(10).join(' ') || parts.slice(4).join(' ') || 'Unknown';
         
-        // 提取进程名
-        let name = 'Process';
-        if (cmd.includes('openclaw-gateway')) name = 'Gateway';
-        else if (cmd.includes('openclaw-node')) name = 'Node';
-        else if (cmd.includes('openclaw-monitor')) name = 'Monitor';
-        else if (cmd.includes('server.js')) name = 'Server';
-        else if (cmd.includes('evolver')) name = 'Evolver';
+        // 提取进程名和描述
+        let name = '其他进程';
+        let desc = cmd.slice(0, 50);
         
-        return { name, cpu, mem, cmd: cmd.slice(0, 60) };
+        if (cmd.includes('openclaw-gateway')) {
+          name = 'Gateway';
+          desc = 'OpenClaw 网关服务';
+        } else if (cmd.includes('openclaw-node')) {
+          name = 'Node';
+          desc = 'OpenClaw 节点服务';
+        } else if (cmd.includes('server.js') || cmd.includes('openclaw-monitor')) {
+          name = 'Monitor';
+          desc = '运维监控面板';
+        } else if (cmd.includes('evolver')) {
+          name = 'Evolver';
+          desc = 'OpenClaw 进化引擎';
+        } else if (cmd.includes('openclaw ')) {
+          name = 'OpenClaw';
+          desc = 'OpenClaw 主进程';
+        }
+        
+        return { name, desc, cpu, mem };
       });
       
       resolve(processes);
@@ -151,9 +164,9 @@ function getProcessList() {
 // 获取总 session 数
 function getSessionCount() {
   return new Promise((resolve) => {
-    exec('tail -200 /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log 2>/dev/null | grep -i "session" | tail -3 || echo ""', { maxBuffer: 64 * 1024 }, (err, stdout) => {
-      const match = stdout.match(/(\d+)\s*active/i);
-      resolve(match ? parseInt(match[1]) : 0);
+    exec(`python3 ${__dirname}/get-sessions.py`, { maxBuffer: 64 * 1024 }, (err, stdout) => {
+      const count = parseInt(stdout.trim()) || 0;
+      resolve(count);
     });
   });
 }
