@@ -24,7 +24,7 @@
     border: 3px solid #00ff00;
     border-radius: 8px;
     padding: 20px;
-    max-width: 520px;
+    max-width: 560px;
     width: 100%;
     box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5);
   }
@@ -88,39 +88,30 @@
     font-weight: bold;
   }
   
-  .progress-fill.cpu {
-    background: linear-gradient(90deg, #ff6600, #ffaa00);
+  .progress-fill.cpu { background: linear-gradient(90deg, #ff6600, #ffaa00); }
+  .progress-fill.memory { background: linear-gradient(90deg, #00aaff, #00ffff); }
+  .progress-fill.context { background: linear-gradient(90deg, #aa00ff, #ff00ff); }
+  
+  .process-list {
+    margin-top: 8px;
+    max-height: 150px;
+    overflow-y: auto;
   }
   
-  .progress-fill.memory {
-    background: linear-gradient(90deg, #00aaff, #00ffff);
-  }
-  
-  .status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 5px;
-  }
-  
-  .status-box {
-    background: #0a0a0a;
-    border: 1px solid #333;
-    padding: 8px;
-    text-align: center;
-    border-radius: 4px;
-  }
-  
-  .status-box .num {
-    font-size: 28px;
-    color: #00ff00;
-    text-shadow: 0 0 10px #00ff00;
-  }
-  
-  .status-box .desc {
+  .process-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #222;
     font-size: 12px;
     color: #888;
   }
+  
+  .process-item:last-child { border-bottom: none; }
+  
+  .process-name { color: #00ff00; }
+  .process-cpu { color: #ff6600; }
+  .process-mem { color: #00aaff; }
   
   .status-ok {
     text-align: center;
@@ -135,30 +126,6 @@
     animation: pulse 2s infinite;
   }
   
-  .status-warn {
-    text-align: center;
-    color: #ffaa00;
-    font-size: 20px;
-    margin-top: 15px;
-    padding: 10px;
-    background: #2a2a0a;
-    border: 2px solid #ffaa00;
-    border-radius: 4px;
-    text-shadow: 0 0 10px #ffaa00;
-  }
-  
-  .status-error {
-    text-align: center;
-    color: #ff4444;
-    font-size: 20px;
-    margin-top: 15px;
-    padding: 10px;
-    background: #2a0a0a;
-    border: 2px solid #ff4444;
-    border-radius: 4px;
-    text-shadow: 0 0 10px #ff4444;
-  }
-  
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
@@ -168,13 +135,7 @@
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     pointer-events: none;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.1),
-      rgba(0, 0, 0, 0.1) 1px,
-      transparent 1px,
-      transparent 2px
-    );
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 2px);
     z-index: 1000;
   }
   
@@ -185,46 +146,11 @@
     margin-top: 15px;
   }
   
-  .info-row {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-  }
+  .info-row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .info-row .item { flex: 1; min-width: 120px; }
   
-  .info-row .item {
-    flex: 1;
-    min-width: 120px;
-  }
-  
-  .loading {
-    color: #ffff00 !important;
-    animation: blink 1s infinite;
-  }
-  
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-  
-  .error {
-    color: #ff4444 !important;
-  }
-  
-  .refresh-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #00ff00;
-    border-radius: 50%;
-    margin-left: 5px;
-    animation: refresh-pulse 30s infinite;
-  }
-  
-  @keyframes refresh-pulse {
-    0% { background: #00ff00; }
-    50% { background: #ffff00; }
-    100% { background: #00ff00; }
-  }
+  .loading { color: #ffff00 !important; animation: blink 1s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 </head>
 <body>
@@ -256,19 +182,31 @@
   </div>
   
   <div class="section">
-    <div class="section-title">⚡ QUEUE & TASKS</div>
-    <div class="status-grid">
-      <div class="status-box">
-        <div class="num" id="running_tasks">--</div>
-        <div class="desc">RUNNING</div>
-      </div>
-      <div class="status-box">
-        <div class="num" id="queued_tasks">--</div>
-        <div class="desc">QUEUED</div>
-      </div>
+    <div class="section-title">💾 CONTEXT</div>
+    <div class="row">
+      <span class="label">Usage</span>
+      <span class="value" id="context_pct">--</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill context" id="context_bar" style="width: 0%">0%</div>
+    </div>
+    <div class="row" style="margin-top:5px">
+      <span class="label">Absolute</span>
+      <span class="value" id="context_abs">--</span>
     </div>
   </div>
-
+  
+  <div class="section">
+    <div class="section-title">⚡ PROCESSES & SESSIONS</div>
+    <div class="row">
+      <span class="label">Active Sessions</span>
+      <span class="value" id="sessions">--</span>
+    </div>
+    <div class="process-list" id="process_list">
+      <div class="process-item"><span>Loading...</span></div>
+    </div>
+  </div>
+  
   <div class="section">
     <div class="section-title">🖥️ DEVICE STATUS</div>
     <div class="row">
@@ -298,45 +236,33 @@
     <div class="row"><span class="label">Runtime</span><span class="value">direct</span></div>
   </div>
   
-  <div id="status_container">
-    <div class="status-ok" id="status">✅ OPERATIONAL</div>
-  </div>
+  <div class="status-ok">✅ OPERATIONAL</div>
   
-  <div class="footer">
-    Last updated: <span id="last_update">--</span>
-    <span class="refresh-indicator" title="Auto refresh every 30s"></span>
-  </div>
+  <div class="footer">Last updated: <span id="last_update">--</span></div>
 </div>
 
 <script>
 const API_BASE = window.location.origin;
-const REFRESH_INTERVAL = 30000; // 30s
+const REFRESH_INTERVAL = 30000;
 
-let updateTimer = null;
-let isOnline = true;
-
-// 更新时钟
 function updateTime() {
-  const now = new Date();
-  document.getElementById('time').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+  document.getElementById('time').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  document.getElementById('last_update').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
 }
 
-// 获取并更新所有数据
+function formatToken(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return n.toString();
+}
+
 async function fetchAllData() {
   try {
     const response = await fetch(`${API_BASE}/api/status`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    isOnline = true;
     
-    // 更新时间
-    document.getElementById('last_update').textContent = new Date(data.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
-    
-    // 系统信息
+    // System
     document.getElementById('version').textContent = data.server.version;
     document.getElementById('platform').textContent = data.server.platform;
     
@@ -348,82 +274,48 @@ async function fetchAllData() {
     document.getElementById('sys_cpu_bar').style.width = data.cpu.usage + '%';
     document.getElementById('sys_cpu_bar').textContent = data.cpu.usage + '%';
     
-    // 内存
+    // Memory
     document.getElementById('sys_mem').textContent = data.memory.percentageFormatted;
     document.getElementById('sys_mem_bar').style.width = data.memory.percentage + '%';
     document.getElementById('sys_mem_bar').textContent = data.memory.percentageFormatted;
     document.getElementById('sys_mem_detail').textContent = `${data.memory.usedFormatted} / ${data.memory.totalFormatted}`;
     
-    // 任务队列
-    document.getElementById('running_tasks').textContent = data.processes.running;
-    document.getElementById('queued_tasks').textContent = data.processes.queued;
+    // Context
+    const ctx = data.context;
+    document.getElementById('context_pct').textContent = ctx.pct + '%';
+    document.getElementById('context_bar').style.width = Math.min(ctx.pct, 100) + '%';
+    document.getElementById('context_bar').textContent = ctx.pct + '%';
+    document.getElementById('context_abs').textContent = `${ctx.usedFormatted} / ${ctx.limitFormatted}`;
     
-    // 状态显示
-    updateStatus(data);
+    // Sessions
+    document.getElementById('sessions').textContent = data.sessions || 0;
     
-    // 移除 loading 状态
-    removeLoadingClass();
+    // Process list
+    const procList = document.getElementById('process_list');
+    if (data.processes && data.processes.length > 0) {
+      procList.innerHTML = data.processes.map(p => 
+        `<div class="process-item">
+          <span class="process-name">${p.name}</span>
+          <span><span class="process-cpu">CPU ${p.cpu.toFixed(1)}%</span> · <span class="process-mem">MEM ${p.mem.toFixed(1)}%</span></span>
+        </div>`
+      ).join('');
+    } else {
+      procList.innerHTML = '<div class="process-item"><span style="color:#666">No processes found</span></div>';
+    }
+    
+    // Remove loading
+    document.querySelectorAll('.value').forEach(el => el.classList.remove('loading'));
     
   } catch (error) {
     console.error('Fetch error:', error);
-    isOnline = false;
-    showError('⚠️ 连接失败');
   }
 }
 
-// 更新状态显示
-function updateStatus(data) {
-  const statusContainer = document.getElementById('status_container');
-  const statusEl = document.getElementById('status');
-  
-  // 根据 CPU 和内存使用率判断状态
-  if (data.cpu.usage > 80 || data.memory.percentage > 90) {
-    statusContainer.innerHTML = '<div class="status-error">🚨 高负载警告</div>';
-  } else if (data.cpu.usage > 60 || data.memory.percentage > 75) {
-    statusContainer.innerHTML = '<div class="status-warn">⚠️ 负载偏高</div>';
-  } else {
-    statusContainer.innerHTML = '<div class="status-ok">✅ OPERATIONAL</div>';
-  }
-}
-
-// 移除 loading 样式
-function removeLoadingClass() {
-  document.querySelectorAll('.value').forEach(el => {
-    el.classList.remove('loading');
-    el.classList.remove('error');
-  });
-}
-
-// 显示错误
-function showError(msg) {
-  const statusContainer = document.getElementById('status_container');
-  statusContainer.innerHTML = `<div class="status-error">${msg}</div>`;
-}
-
-// 设置 loading 状态
-function setLoading() {
-  document.querySelectorAll('.value').forEach(el => {
-    if (el.textContent === '--') {
-      el.classList.add('loading');
-    }
-  });
-}
-
-// 初始化
-function init() {
-  updateTime();
-  setLoading();
-  fetchAllData();
-  
-  // 每秒更新时钟
-  setInterval(updateTime, 1000);
-  
-  // 每 30s 更新数据
-  setInterval(fetchAllData, REFRESH_INTERVAL);
-}
-
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', init);
+// Init
+updateTime();
+fetchAllData();
+setInterval(updateTime, 1000);
+setInterval(fetchAllData, REFRESH_INTERVAL);
 </script>
 </body>
 </html>
