@@ -89,6 +89,17 @@ body.dark .nav-item:hover { background-color: #1e293b; }
 .nav-item.active { background-color: #EFF6FF; color: var(--accent-blue); font-weight: 600; }
 body.dark .nav-item.active { background-color: #1e3a5f; }
 
+.status-badge { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #D1FAE5; color: #15803D; display: inline-block; }
+.status-badge.warn { background: #FEF3C7; color: #92400E; }
+.status-badge.error { background: #FEE2E2; color: #DC2626; }
+
+/* ── Progress ── */
+.progress-bar { background: #E5E7EB; border-radius: 6px; overflow: hidden; height: 6px; }
+.progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; font-size: 10px; color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.progress-fill.cpu { background: var(--accent-orange); }
+.progress-fill.memory { background: var(--accent-blue); }
+.progress-fill.context { background: var(--accent-purple); }
+
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 20px;
@@ -488,10 +499,112 @@ body.dark .footer-bar { border-top-color: #1e293b; }
     <div class="view-header">
       <div>
         <h1>🖥️ 系统监控</h1>
-        <div class="subtitle">OpenClaw 运维状态 · 设备资源</div>
+        <div class="subtitle">OpenClaw 运维状态 · 设备资源 · 30秒自动刷新</div>
+      </div>
+      <div class="status-badge" id="sys-status-badge">--</div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-label">系统状态</div>
+        <div class="kpi-value" id="sys-status-text" style="color:var(--success)">--</div>
+        <div class="kpi-sub" id="sys-status-reason"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CPU 使用率</div>
+        <div class="kpi-value" id="sys-cpu-pct" style="color:var(--text-main)">--</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill cpu" id="sys-cpu-bar" style="width:0%">0%</div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">内存占用</div>
+        <div class="kpi-value" id="sys-mem-pct" style="color:var(--text-main)">--</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill memory" id="sys-mem-bar" style="width:0%">0%</div></div>
+        <div class="kpi-sub" id="sys-mem-detail">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">活跃会话</div>
+        <div class="kpi-value" id="sys-sessions">--</div>
+        <div class="kpi-sub">Agent Sessions</div>
       </div>
     </div>
-    <iframe src="/index.html" style="width:100%;height:calc(100vh - 120px);border:none;border-radius:12px;" id="system-frame"></iframe>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Left: CPU + Memory + Context -->
+      <div>
+        <!-- CPU -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">⚙️ CPU</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px">
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">使用率</div><div id="sys-cpu-usage" style="font-size:24px;font-weight:700;color:var(--accent-orange)">--</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">空闲率</div><div id="sys-cpu-idle" style="font-size:24px;font-weight:700;color:var(--success)">--</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">核心数</div><div id="sys-cpu-cores" style="font-size:24px;font-weight:700">--</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">平台</div><div id="sys-platform" style="font-size:14px;font-weight:600;word-break:break-all">--</div></div>
+          </div>
+        </div>
+
+        <!-- Memory -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">💾 内存</div>
+          </div>
+          <div style="padding:12px 16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><div style="font-size:11px;color:var(--text-muted)">总内存</div><div id="sys-mem-total" style="font-size:16px;font-weight:700">--</div></div>
+              <div><div style="font-size:11px;color:var(--text-muted)">已使用</div><div id="sys-mem-used" style="font-size:16px;font-weight:700;color:var(--accent-blue)">--</div></div>
+              <div><div style="font-size:11px;color:var(--text-muted)">空闲</div><div id="sys-mem-free" style="font-size:16px;font-weight:700;color:var(--success)">--</div></div>
+            </div>
+            <div class="progress-bar" style="height:12px"><div class="progress-fill memory" id="sys-mem-bar2" style="width:0%">0%</div></div>
+          </div>
+        </div>
+
+        <!-- Context -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🧠 模型上下文</div>
+          </div>
+          <div style="padding:12px 16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span id="sys-ctx-used" style="font-size:14px;font-weight:600">--</span>
+              <span style="font-size:12px;color:var(--text-muted)">/ <span id="sys-ctx-limit">--</span></span>
+            </div>
+            <div class="progress-bar" style="height:10px"><div class="progress-fill context" id="sys-ctx-bar" style="width:0%">0%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Processes + Server Info -->
+      <div>
+        <!-- Processes -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">⚡ 进程</div>
+            <span style="font-size:12px;color:var(--text-muted)" id="sys-proc-count">--</span>
+          </div>
+          <div id="sys-proc-list" style="max-height:320px;overflow-y:auto">
+            <div style="padding:16px;color:var(--text-muted);font-size:13px">加载中...</div>
+          </div>
+        </div>
+
+        <!-- Server Info -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🖧 服务器信息</div>
+          </div>
+          <div style="padding:12px 16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div><div style="font-size:11px;color:var(--text-muted)">版本</div><div id="sys-version" style="font-size:13px;font-weight:600">v1.0.0</div></div>
+              <div><div style="font-size:11px;color:var(--text-muted)">运行时长</div><div id="sys-uptime" style="font-size:13px;font-weight:600">--</div></div>
+              <div><div style="font-size:11px;color:var(--text-muted)">主机名</div><div id="sys-hostname" style="font-size:13px;font-weight:600">--</div></div>
+              <div><div style="font-size:11px;color:var(--text-muted)">刷新间隔</div><div style="font-size:13px;font-weight:600">30秒</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -518,14 +631,20 @@ setInterval(() => {
 }, 60000);
 
 // ─── Nav ───
+let activeTab = 'overview';
+let sysInterval = null;
 document.querySelectorAll('.nav-item').forEach(n => {
   n.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.view-section').forEach(x => x.classList.remove('active-view'));
     n.classList.add('active');
     document.getElementById('view-' + n.dataset.target).classList.add('active-view');
-    if (n.dataset.target === 'system') {
-      document.getElementById('system-frame').src = '/index.html';
+    activeTab = n.dataset.target;
+    if (activeTab === 'system') {
+      fetchSystem();
+      if (!sysInterval) sysInterval = setInterval(fetchSystem, 30000);
+    } else {
+      if (sysInterval) { clearInterval(sysInterval); sysInterval = null; }
     }
   });
 });
@@ -660,7 +779,76 @@ async function fetchP100() {
   }
 }
 
-// BOM Render
+// ─── System Monitor ───
+async function fetchSystem() {
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+
+    const badge = document.getElementById('sys-status-badge');
+    const statusText = document.getElementById('sys-status-text');
+    const reasonEl = document.getElementById('sys-status-reason');
+    const level = d.status && d.status.level ? d.status.level : 'operational';
+    const reason = d.status && d.status.reason ? d.status.reason : '';
+    badge.className = 'status-badge';
+    if (level === 'operational') { badge.textContent = '正常'; statusText.textContent = '正常运行'; statusText.style.color = 'var(--success)'; }
+    else if (level === 'warning' || level === 'high_load') { badge.textContent = '警告'; badge.classList.add('warn'); statusText.textContent = '负载警告'; statusText.style.color = '#d97706'; }
+    else if (level === 'frozen') { badge.textContent = '缓慢'; badge.classList.add('warn'); statusText.textContent = '响应缓慢'; statusText.style.color = '#d97706'; }
+    else if (level === 'crashed') { badge.textContent = '崩溃'; badge.classList.add('error'); statusText.textContent = '服务崩溃'; statusText.style.color = 'var(--danger)'; }
+    else { badge.textContent = '正常'; statusText.textContent = '正常'; statusText.style.color = 'var(--success)'; }
+    reasonEl.textContent = reason;
+
+    const cpu = d.cpu || {};
+    const cpuPct = cpu.usage || 0;
+    document.getElementById('sys-cpu-pct').textContent = cpuPct + '%';
+    document.getElementById('sys-cpu-bar').style.width = cpuPct + '%';
+    document.getElementById('sys-cpu-usage').textContent = cpuPct + '%';
+    document.getElementById('sys-cpu-idle').textContent = (cpu.idle || 0) + '%';
+    document.getElementById('sys-cpu-cores').textContent = cpu.cores || '--';
+    document.getElementById('sys-platform').textContent = (d.server && d.server.platform ? d.server.platform : '--').toUpperCase();
+
+    const mem = d.memory || {};
+    const memPct = mem.percentage || 0;
+    document.getElementById('sys-mem-pct').textContent = memPct + '%';
+    document.getElementById('sys-mem-bar').style.width = memPct + '%';
+    document.getElementById('sys-mem-bar2').style.width = memPct + '%';
+    document.getElementById('sys-mem-total').textContent = fmtB(mem.total);
+    document.getElementById('sys-mem-used').textContent = fmtB(mem.used);
+    document.getElementById('sys-mem-free').textContent = fmtB(mem.free);
+    document.getElementById('sys-mem-detail').textContent = fmtB(mem.used) + ' / ' + fmtB(mem.total);
+
+    document.getElementById('sys-sessions').textContent = d.sessions != null ? d.sessions : '--';
+
+    const ctx = d.context || {};
+    document.getElementById('sys-ctx-used').textContent = fmtT(ctx.used || 0) + ' tokens';
+    document.getElementById('sys-ctx-limit').textContent = fmtT(ctx.limit || 205376) + ' tokens';
+    document.getElementById('sys-ctx-bar').style.width = Math.min(ctx.pct || 0, 100) + '%';
+
+    document.getElementById('sys-version').textContent = (d.server && d.server.version) || 'v1.0.0';
+    document.getElementById('sys-hostname').textContent = (d.server && d.server.hostname) || '--';
+    document.getElementById('sys-uptime').textContent = fmtU(d.server && d.server.uptime ? d.server.uptime : 0);
+
+    const procs = d.processes || [];
+    document.getElementById('sys-proc-count').textContent = procs.length + ' 个';
+    const procEl = document.getElementById('sys-proc-list');
+    if (procs.length === 0) {
+      procEl.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px">无进程数据</div>';
+    } else {
+      procEl.innerHTML = procs.map(function(p) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border-color);font-size:13px">' +
+          '<div><div style="font-weight:600;color:var(--text-main)">' + (p.name||'Process') + '</div><div style="font-size:11px;color:var(--text-muted)">' + (p.desc||'') + '</div></div>' +
+          '<div style="text-align:right"><div style="font-weight:700;color:var(--accent-orange)">' + p.cpu + '%</div><div style="font-size:11px;color:var(--text-muted)">MEM ' + p.mem + '%</div></div></div>';
+      }).join('');
+    }
+    updateTime();
+  } catch(e) { console.error('System fetch error', e); }
+}
+function fmtB(b) { if (!b) return '0 B'; var i = Math.floor(Math.log(b)/Math.log(1024)); return parseFloat((b/Math.pow(1024,i)).toFixed(1))+' BKMGT'.charAt(i); }
+function fmtT(n) { if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
+function fmtU(s) { if (s<60) return s+'秒'; if (s<3600) return Math.round(s/60)+'分钟'; if (s<86400) return (s/3600).toFixed(1)+'小时'; return (s/86400).toFixed(1)+'天'; }
+
+// ─── BOM Render ───
 async function renderBOM() {
   const el = document.getElementById('bom-content');
   el.innerHTML = '<div class="panel"><div class="panel-header"><div class="panel-title">📋 物料分类</div></div><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
