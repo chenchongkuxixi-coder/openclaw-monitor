@@ -1,57 +1,37 @@
 /**
- * OpenClaw 运维监控面板 - 后端服务
- * 提供真实系统数据 API + HTTP Basic Auth 保护
- *
- * ============================================================
- * 服务端口: 8766 (所有修改统一指向此端口)
- * ============================================================
- * 本地访问: http://localhost:8766
- * 公网访问: cloudflared tunnel --url http://localhost:8766
- * 日志位置: ~/.openclaw/workspace/openclaw-monitor/tunnel.log
- *
- * 注意事项:
- * - Mac 关机或休眠后链接失效
- * - 每次重启 tunnel 会生成新 URL
- * - 固定 URL 需注册 Cloudflare 账号
- * ============================================================
+ * OpenClaw Monitor - 后端服务
+ * 端口: 8766 | 认证: paddy / p100monitor
  */
 
 const http = require('http');
-const url = require('url');
+const urlModule = require('url');
 const { exec } = require('child_process');
-const path = require('path');
+const pathModule = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// ==================== 配置 ====================
-const PORT = 8766;  // 【重要】所有修改统一指向此端口
-const REFRESH_INTERVAL = 30000; // 30s 刷新间隔
+const PORT = 8766;
+const REFRESH_INTERVAL = 30000;
 
-// 认证配置（访问公网地址时需要输入）
 const AUTH_USER = 'paddy';
 const AUTH_PASS = 'p100monitor';
-// ===========================================
 
-// 简单的 Base64 校验
-function checkAuth(authHeader) {
-  if (!authHeader || !authHeader.startsWith('Basic ')) return false;
-  const base64 = authHeader.slice(6);
-  const decoded = Buffer.from(base64, 'base64').toString();
-  const [user, pass] = decoded.split(':');
+function checkAuth(header) {
+  if (!header || !header.startsWith('Basic ')) return false;
+  const decoded = Buffer.from(header.slice(6), 'base64').toString();
+  const colonIdx = decoded.indexOf(':');
+  const user = decoded.slice(0, colonIdx);
+  const pass = decoded.slice(colonIdx + 1);
   return user === AUTH_USER && pass === AUTH_PASS;
 }
 
-// 发送 401 认证挑战
-function sendAuthChallenge(res) {
-  res.writeHead(401, {
-    'WWW-Authenticate': 'Basic realm="OpenClaw Monitor"',
-    'Content-Type': 'text/html'
-  });
-  res.end('<h1>401 Unauthorized</h1><p>需要登录才能访问</p>');
+function sendAuth(res) {
+  res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="OpenClaw"', 'Content-Type': 'text/html' });
+  res.end('<h1>401 Unauthorized</h1>');
 }
 
-// 系统数据缓存
-let systemCache = {
+// ── System Data ──
+let cache = {
   timestamp: Date.now(),
   cpu: { usage: 0, idle: 100 },
   memory: { total: 0, used: 0, free: 0, percentage: 0 },
@@ -61,304 +41,289 @@ let systemCache = {
   status: { level: 'operational', reason: '' }
 };
 
-// 获取 CPU 使用率 (macOS)
-function getCpuUsage() {
-  return new Promise((resolve) => {
-    exec('top -l 1 -n 0', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
+function getCpu() {
+  return new Promise(function(resolve) {
+    exec('top -l 1 -n 0', { maxBuffer: 1024 * 1024 }, function(err, stdout) {
       if (err) { resolve({ usage: 0, idle: 100 }); return; }
-      const userMatch = stdout.match(/(\d+\.?\d*)% user/);
-      const sysMatch = stdout.match(/(\d+\.?\d*)% sys/);
-      const idleMatch = stdout.match(/(\d+\.?\d*)% idle/);
-      
-      const user = userMatch ? parseFloat(userMatch[1]) : 0;
-      const sys = sysMatch ? parseFloat(sysMatch[1]) : 0;
-      const idle = idleMatch ? parseFloat(idleMatch[1]) : 100;
-      
-      resolve({ usage: parseFloat((user + sys).toFixed(1)), idle: parseFloat(idle.toFixed(1)) });
+      var uMatch = stdout.match(/(\d+\.?\d*)% user/);
+      var sMatch = stdout.match(/(\d+\.?\d*)% sys/);
+      var iMatch = stdout.match(/(\d+\.?\d*)% idle/);
+      var u = uMatch ? parseFloat(uMatch[1]) : 0;
+      var s = sMatch ? parseFloat(sMatch[1]) : 0;
+      var i = iMatch ? parseFloat(iMatch[1]) : 100;
+      resolve({ usage: parseFloat((u + s).toFixed(1)), idle: parseFloat(i.toFixed(1)) });
     });
   });
 }
 
-// 获取内存使用率 (macOS)
-function getMemoryUsage() {
-  return new Promise((resolve) => {
-    exec('vm_stat', { maxBuffer: 1024 * 1024 }, (err, stdout) => {
+function getMem() {
+  return new Promise(function(resolve) {
+    exec('vm_stat', { maxBuffer: 1024 * 1024 }, function(err, stdout) {
       if (err) { resolve({ total: os.totalmem(), used: 0, free: os.freemem(), percentage: 0 }); return; }
-      
-      const pageSize = 4096;
-      const freeMatch = stdout.match(/Pages free:\s*(\d+)/);
-      const activeMatch = stdout.match(/Pages active:\s*(\d+)/);
-      const inactiveMatch = stdout.match(/Pages inactive:\s*(\d+)/);
-      const wiredMatch = stdout.match(/Pages wired down:\s*(\d+)/);
-      
-      const free = freeMatch ? parseInt(freeMatch[1]) * pageSize : 0;
-      const active = activeMatch ? parseInt(activeMatch[1]) * pageSize : 0;
-      const inactive = inactiveMatch ? parseInt(inactiveMatch[1]) * pageSize : 0;
-      const wired = wiredMatch ? parseInt(wiredMatch[1]) * pageSize : 0;
-      
-      const total = os.totalmem();
-      const used = active + wired;
-      const percentage = parseFloat(((used / total) * 100).toFixed(1));
-      
-      resolve({ total, used, free: free + inactive, percentage });
+      var ps = 4096;
+      var freePages = stdout.match(/Pages free:\s*(\d+)/);
+      var actPages = stdout.match(/Pages active:\s*(\d+)/);
+      var wiredPages = stdout.match(/Pages wired down:\s*(\d+)/);
+      var free = freePages ? parseInt(freePages[1]) * ps : 0;
+      var act = actPages ? parseInt(actPages[1]) * ps : 0;
+      var wired = wiredPages ? parseInt(wiredPages[1]) * ps : 0;
+      var total = os.totalmem();
+      var pct = parseFloat(((act + wired) / total * 100).toFixed(1));
+      resolve({ total: total, used: act + wired, free: free, percentage: pct });
     });
   });
 }
 
-// 获取 Context 使用情况（从状态文件读取，由 agent 写入）
-function getContextUsage() {
-  return new Promise((resolve) => {
-    const statusFile = path.join(os.homedir(), '.openclaw', 'workspace', 'session-status.json');
-    fs.readFile(statusFile, 'utf8', (err, data) => {
+function getContext() {
+  return new Promise(function(resolve) {
+    var f = pathModule.join(os.homedir(), '.openclaw', 'workspace', 'session-status.json');
+    fs.readFile(f, 'utf8', function(err, data) {
       if (err) { resolve({ used: 0, limit: 205376, pct: 0 }); return; }
       try {
-        const json = JSON.parse(data);
-        const used = json.contextUsed || 0;
-        const limit = json.contextLimit || 205376;
-        resolve({ used, limit, pct: Math.round((used / limit) * 100) });
-      } catch (e) { resolve({ used: 0, limit: 205376, pct: 0 }); }
+        var j = JSON.parse(data);
+        var u = j.contextUsed || 0, l = j.contextLimit || 205376;
+        resolve({ used: u, limit: l, pct: Math.round(u / l * 100) });
+      } catch(e) { resolve({ used: 0, limit: 205376, pct: 0 }); }
     });
   });
 }
 
-// 获取运行中的进程列表
-function getProcessList() {
-  return new Promise((resolve) => {
-    exec('ps aux | grep -E "openclaw-gateway|openclaw-node|openclaw-monitor|evolver|openclaw$" | grep -v grep | head -10', { maxBuffer: 64 * 1024 }, (err, stdout) => {
+function getProcesses() {
+  return new Promise(function(resolve) {
+    exec('ps aux | grep -E "openclaw-gateway|openclaw-node|openclaw-monitor|evolver|openclaw$" | grep -v grep | head -10', { maxBuffer: 64 * 1024 }, function(err, stdout) {
       if (err || !stdout.trim()) { resolve([]); return; }
-      
-      const lines = stdout.trim().split('\n');
-      const processes = lines.slice(0, 8).map(line => {
-        const parts = line.trim().split(/\s+/);
-        const cpu = parseFloat(parts[2]) || 0;
-        const mem = parseFloat(parts[3]) || 0;
-        const cmd = parts.slice(10).join(' ') || parts.slice(4).join(' ') || 'Unknown';
-        
-        // 提取进程名和描述
-        let name = '其他进程';
-        let desc = cmd.slice(0, 50);
-        
-        if (cmd.includes('openclaw-gateway')) {
-          name = 'Gateway';
-          desc = 'OpenClaw 网关服务';
-        } else if (cmd.includes('openclaw-node')) {
-          name = 'Node';
-          desc = 'OpenClaw 节点服务';
-        } else if (cmd.includes('server.js') || cmd.includes('openclaw-monitor')) {
-          name = 'Monitor';
-          desc = '运维监控面板';
-        } else if (cmd.includes('evolver')) {
-          name = 'Evolver';
-          desc = 'OpenClaw 进化引擎';
-        } else if (cmd.includes('openclaw ')) {
-          name = 'OpenClaw';
-          desc = 'OpenClaw 主进程';
-        }
-        
-        return { name, desc, cpu, mem };
+      var lines = stdout.trim().split('\n').slice(0, 8);
+      var procs = lines.map(function(line) {
+        var parts = line.trim().split(/\s+/);
+        var cpu = parseFloat(parts[2]) || 0;
+        var mem = parseFloat(parts[3]) || 0;
+        var cmd = parts.slice(10).join(' ') || parts.slice(4).join(' ') || '';
+        var name = 'Process', desc = cmd.slice(0, 50);
+        if (cmd.indexOf('openclaw-gateway') !== -1) { name = 'Gateway'; desc = 'OpenClaw 网关服务'; }
+        else if (cmd.indexOf('openclaw-node') !== -1) { name = 'Node'; desc = 'OpenClaw 节点服务'; }
+        else if (cmd.indexOf('server.js') !== -1 || cmd.indexOf('openclaw-monitor') !== -1) { name = 'Monitor'; desc = '运维监控面板'; }
+        else if (cmd.indexOf('evolver') !== -1) { name = 'Evolver'; desc = 'OpenClaw 进化引擎'; }
+        else if (cmd.indexOf('openclaw ') !== -1) { name = 'OpenClaw'; desc = 'OpenClaw 主进程'; }
+        return { name: name, desc: desc, cpu: cpu, mem: mem };
       });
-      
-      resolve(processes);
+      resolve(procs);
     });
   });
 }
 
-// 获取总 session 数
-function getSessionCount() {
-  return new Promise((resolve) => {
-    exec(`python3 ${__dirname}/get-sessions.py`, { maxBuffer: 64 * 1024 }, (err, stdout) => {
-      const count = parseInt(stdout.trim()) || 0;
-      resolve(count);
+function getSessions() {
+  return new Promise(function(resolve) {
+    exec('python3 ' + __dirname + '/get-sessions.py', { maxBuffer: 64 * 1024 }, function(err, stdout) {
+      resolve(parseInt(stdout.trim()) || 0);
     });
   });
 }
 
-// 检查 OpenClaw 健康状态
-function checkOpenClawHealth() {
-  return new Promise((resolve) => {
-    // 1. 检查 Gateway 进程是否存在
-    exec('ps aux | grep "openclaw-gateway" | grep -v grep | wc -l', { maxBuffer: 4096, timeout: 3000 }, (err, stdout) => {
-      const count = parseInt(stdout.trim()) || 0;
-      if (count === 0) {
-        resolve({ status: 'crashed', reason: 'Gateway 进程不存在', uptime: 0 });
-        return;
-      }
-      
-      // 2. 检查 Gateway 是否响应
-      const http = require('http');
-      const req = http.get('http://127.0.0.1:27239/health', { timeout: 3000 }, (res) => {
-        resolve({ status: 'operational', reason: '', uptime: 1 });
-      });
-      req.on('error', () => {
-        resolve({ status: 'frozen', reason: 'Gateway 进程存在但无响应', uptime: 1 });
-      });
-      req.on('timeout', () => {
-        req.destroy();
-        resolve({ status: 'frozen', reason: 'Gateway 健康检查超时', uptime: 1 });
-      });
+function checkHealth() {
+  return new Promise(function(resolve) {
+    exec('ps aux | grep "openclaw-gateway" | grep -v grep | wc -l', { maxBuffer: 4096, timeout: 3000 }, function(err, stdout) {
+      if (parseInt(stdout.trim()) === 0) { resolve({ status: 'crashed', reason: 'Gateway 进程不存在' }); return; }
+      var req = http.get('http://127.0.0.1:27239/health', { timeout: 3000 }, function(res) { resolve({ status: 'operational', reason: '' }); });
+      req.on('error', function() { resolve({ status: 'frozen', reason: 'Gateway 进程存在但无响应' }); });
+      req.on('timeout', function() { req.destroy(); resolve({ status: 'frozen', reason: 'Gateway 健康检查超时' }); });
     });
   });
 }
 
-// 根据 CPU/内存判断系统负载状态
-function getSystemStatus(cpuUsage, memPercentage) {
-  if (cpuUsage > 80 || memPercentage > 90) {
-    return { status: 'high_load', reason: `CPU ${cpuUsage}% / 内存 ${memPercentage}%` };
-  }
-  if (cpuUsage > 60 || memPercentage > 75) {
-    return { status: 'warning', reason: `CPU ${cpuUsage}% / 内存 ${memPercentage}%` };
-  }
-  return { status: 'normal', reason: '' };
-}
-
-// 更新所有系统数据
-async function updateSystemData() {
+async function update() {
   try {
-    const [cpu, memory, context, processes, sessions, health] = await Promise.all([
-      getCpuUsage(),
-      getMemoryUsage(),
-      getContextUsage(),
-      getProcessList(),
-      getSessionCount(),
-      checkOpenClawHealth()
-    ]);
-    
-    // 综合判断状态优先级: crashed > frozen > high_load > warning > operational
-    let level = 'operational';
-    let reason = '';
-    
-    // OpenClaw 自身状态优先
+    var results = await Promise.all([getCpu(), getMem(), getContext(), getProcesses(), getSessions(), checkHealth()]);
+    var cpu = results[0], mem = results[1], ctx = results[2], procs = results[3], sessions = results[4], health = results[5];
+    var level = 'operational', reason = '';
     if (health.status === 'crashed') { level = 'crashed'; reason = health.reason; }
     else if (health.status === 'frozen') { level = 'frozen'; reason = health.reason; }
-    else {
-      // 系统负载状态
-      const sys = getSystemStatus(cpu.usage, memory.percentage);
-      if (sys.status === 'high_load') { level = 'high_load'; reason = sys.reason; }
-      else if (sys.status === 'warning') { level = 'warning'; reason = sys.reason; }
+    else if (cpu.usage > 80 || mem.percentage > 90) { level = 'high_load'; reason = 'CPU ' + cpu.usage + '% / 内存 ' + mem.percentage + '%'; }
+    else if (cpu.usage > 60 || mem.percentage > 75) { level = 'warning'; reason = 'CPU ' + cpu.usage + '% / 内存 ' + mem.percentage + '%'; }
+    cache = { timestamp: Date.now(), cpu: cpu, memory: mem, context: ctx, processes: procs, sessions: sessions, status: { level: level, reason: reason } };
+  } catch(e) { console.error('Update error:', e.message); }
+}
+
+function fmtBytes(b) {
+  if (!b) return '0 B';
+  var i = Math.floor(Math.log(b) / Math.log(1024));
+  return parseFloat((b / Math.pow(1024, i)).toFixed(1)) + ' BKMGT'.charAt(i);
+}
+
+function fmtToken(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  return String(n);
+}
+
+// ── P100 Data ──
+function readJson(p) {
+  try { if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8')); } catch(e) {}
+  return null;
+}
+
+function getP100() {
+  var idx = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', 'index_project-schedule.json'));
+  var risk = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', 'index_risk-tracking.json'));
+  var risks = [];
+  if (idx) {
+    for (var di = 0; di < (idx.docs || []).length; di++) {
+      var doc = idx.docs[di];
+      var risksArr = (doc.key_insights && doc.key_insights.critical_risks) || [];
+      for (var ri = 0; ri < risksArr.length; ri++) {
+        var r = risksArr[ri];
+        if (r.severity === 'HIGH') risks.push({ id: r.id, title: r.title, description: r.description, impact: r.impact, severity: r.severity });
+      }
     }
-    
-    systemCache = {
-      timestamp: Date.now(),
-      cpu,
-      memory,
-      context,
-      processes,
-      sessions,
-      status: { level, reason }
-    };
-  } catch (error) {
-    console.error('Error updating system data:', error);
   }
+  if (risk) {
+    for (var i = 0; i < (risk.docs || []).length; i++) {
+      var d = risk.docs[i];
+      if (d.severity === 'HIGH') risks.push({ id: d.id, title: d.title, description: d.description, impact: d.impact, severity: d.severity });
+    }
+  }
+  var milestones = {};
+  if (idx) {
+    for (var mi = 0; mi < (idx.docs || []).length; mi++) {
+      var m = idx.docs[mi];
+      if (m.key_insights && m.key_insights.milestones) {
+        for (var k in m.key_insights.milestones) milestones[k] = m.key_insights.milestones[k];
+      }
+    }
+  }
+  var decisions = [];
+  if (idx) {
+    for (var di2 = 0; di2 < (idx.docs || []).length; di2++) {
+      var doc2 = idx.docs[di2];
+      var decs = (doc2.key_insights && doc2.key_insights.key_decisions) || [];
+      for (var dj = 0; dj < decs.length; dj++) {
+        decisions.push({ date: doc2.key_insights.meeting_date, text: decs[dj] });
+      }
+    }
+  }
+  return {
+    version: idx ? idx.version : '2.0',
+    last_updated: idx ? idx.last_updated : '',
+    topics: idx ? Object.keys(idx.topics || {}) : [],
+    doc_count: idx ? Object.values(idx.topics || {}).reduce(function(s, t) { return s + (t.doc_count || 0); }, 0) : 0,
+    milestones: milestones,
+    recent_docs: idx ? idx.docs.slice(0, 5).map(function(d) { return { title: d.title, date: (d.key_insights && d.key_insights.meeting_date) || d.last_updated || '' }; }) : [],
+    critical_risks: risks.slice(0, 5),
+    decisions: decisions.slice(0, 5),
+    project_phase: 'DVT',
+    next_milestone: '2026-03-31 DVT 出货',
+    bom: { total: 67, cn: 67, us: 70 }
+  };
 }
 
-// 格式化字节为可读字符串
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+function getP100Risks() {
+  var risk = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', 'index_risk-tracking.json'));
+  var idx = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', 'index_project-schedule.json'));
+  var items = [];
+  if (risk) {
+    for (var i = 0; i < (risk.docs || []).length; i++) {
+      var d = risk.docs[i];
+      items.push({ id: d.id, title: d.title, description: d.description, impact: d.impact, severity: d.severity, status: d.status, date: d.first_identified });
+    }
+  }
+  if (idx) {
+    for (var j = 0; j < (idx.docs || []).length; j++) {
+      var doc = idx.docs[j];
+      var risksArr = (doc.key_insights && doc.key_insights.critical_risks) || [];
+      for (var k = 0; k < risksArr.length; k++) {
+        var r = risksArr[k];
+        items.push({ id: r.id, title: r.title, description: r.description, impact: r.impact, severity: r.severity, status: 'OPEN', date: doc.key_insights && doc.key_insights.meeting_date, source: doc.title });
+      }
+    }
+  }
+  return { items: items, total: items.length };
 }
 
-// 格式化 token 数量
-function formatToken(n) {
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-  return n.toString();
+function getP100Docs() {
+  var files = ['index_project-schedule.json', 'index_product-definition.json', 'index_supply-chain.json', 'index_risk-tracking.json'];
+  var items = [];
+  for (var fi = 0; fi < files.length; fi++) {
+    var d = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', files[fi]));
+    if (!d) continue;
+    for (var di = 0; di < (d.docs || []).length; di++) {
+      var doc = d.docs[di];
+      items.push({ title: doc.title, type: d.topic || '文档', date: (doc.key_insights && doc.key_insights.meeting_date) || doc.last_updated || '', url: doc.url || doc.source_url || '' });
+    }
+  }
+  items.sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+  return { items: items, total: items.length };
 }
 
-// API 路由处理
-function handleApi(req, res) {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+function getP100BOM() {
+  return {
+    '眼镜-结构料': ['G2 A 镜框组件（灰）', 'G2 A 镜框（灰）', 'G2 A 镜框装饰片（灰）', 'G2 A 桩头装饰片（左/右-灰）', 'G2 A 演示样机光机底盖（左/右-灰）', 'G2 A MIC支撑件（左）', 'G2 A 光敏支撑件（右）', 'G2 A 转轴', 'G2 A 电池仓装饰片（灰）', 'G2 A 电池仓组件（灰）', 'G2 A 电池外壳（左/右-灰）', 'G2 A 电池内壳（左/右-灰）', 'G2 A 前框磁铁', 'G2 A 导电弹片', 'G2 A 镜框硅胶（灰）', '限位转轴（左上/左下/右上/右下）', 'G2 A 鼻托支架', '鼻托托叶', 'G2 A 电池仓螺丝', '支撑件螺丝', '机牙M1x2.5'],
+    '眼镜-辅料': ['防水透气膜', 'G2 A 电池背胶', 'G2 A 导电泡棉', 'G2 A 光波导镜片背胶（左/右）', 'G2 A 波导片保护膜（左/右）', 'G2 A FPC固定背胶', 'G2 A 电池仓防水透声膜（前/后）', 'G2 A 电池仓防水透声膜（后右）', 'G2 A 镜框MIC防水透声膜', 'G2 A 光机背板绝缘胶带', 'G2 A 电池仓绝缘胶带（左/右）', '工程胶水', 'UV胶（DU-3526W）', 'Superx8008黑胶', '转轴热熔胶(5518BK)', 'K85速干胶', '干膜润滑剂MDF-001AP', '波导光机AA胶水', 'UV密封胶水', '常温结构胶', '光机底盖 SR'],
+    '眼镜-光学': ['G2 A 光波导镜片（左）_四维', 'G2 A 光波导镜片（左）_至格', 'G2 A 光波导镜片（右）_四维', 'G2 A 光波导镜片（右）_至格', 'G2 A 平光镜片（左/右）'],
+    '眼镜-硬件': ['G2 A 主板（左/右）', 'G2 A 镜框FPC', 'G2 A 电池仓FPC（左/右）', 'G2 A 电池组件-P', 'G2 A 电池（左/右）-P'],
+    '展台-硬件': ['G2 POSM 主板', '联想 K12C 平板电脑', '一拖多适配器', '拓展坞', '转换插头-中转美'],
+    '展台-线材': ['转 12V 电源线', 'Type A转Type C 电源线', 'Type C 母转公', 'Type C转Type C 电源线', 'Y型充电通讯线'],
+    '展台-结构件': ['灯箱', 'Mirror', 'PAD保护壳', 'POSM主板保护壳', '支架硅胶', '展台硅胶']
+  };
+}
+
+function getP100Schedule() {
+  var idx = readJson(pathModule.join(os.homedir(), '.openclaw', 'workspace', 'index_project-schedule.json'));
+  var items = [];
+  if (idx) {
+    items = idx.docs.map(function(d) { return { title: d.title, date: (d.key_insights && d.key_insights.meeting_date) || '', type: '周会纪要', url: d.url || '' }; });
+  }
+  return { items: items, total: items.length };
+}
+
+// ── Server ──
+var mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon' };
+
+var server = http.createServer(function(req, res) {
+  var parsedUrl = urlModule.parse(req.url);
+  var pathname = parsedUrl.pathname;
   
-  // 认证检查（health 接口除外）
-  const authHeader = req.headers['authorization'];
-  if (pathname !== '/health' && !checkAuth(authHeader)) {
-    sendAuthChallenge(res);
-    return;
-  }
+  if (pathname !== '/health' && !checkAuth(req.headers['authorization'])) { sendAuth(res); return; }
   
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
   
   if (pathname === '/api/status' || pathname === '/status') {
-    const response = {
-      timestamp: systemCache.timestamp,
+    res.end(JSON.stringify({
+      timestamp: cache.timestamp,
       server: { version: '1.0.0', uptime: os.uptime(), platform: os.platform(), hostname: os.hostname() },
-      cpu: { usage: systemCache.cpu.usage, idle: systemCache.cpu.idle, cores: os.cpus().length },
-      memory: {
-        total: systemCache.memory.total,
-        used: systemCache.memory.used,
-        free: systemCache.memory.free,
-        percentage: systemCache.memory.percentage,
-        totalFormatted: formatBytes(systemCache.memory.total),
-        usedFormatted: formatBytes(systemCache.memory.used),
-        percentageFormatted: systemCache.memory.percentage + '%'
-      },
-      context: {
-        used: systemCache.context.used,
-        limit: systemCache.context.limit,
-        pct: systemCache.context.pct,
-        usedFormatted: formatToken(systemCache.context.used),
-        limitFormatted: formatToken(systemCache.context.limit)
-      },
-      processes: systemCache.processes,
-      sessions: systemCache.sessions,
-      status: systemCache.status,
-      refreshInterval: REFRESH_INTERVAL
-    };
-    res.end(JSON.stringify(response));
+      cpu: { usage: cache.cpu.usage, idle: cache.cpu.idle, cores: os.cpus().length },
+      memory: { total: cache.memory.total, used: cache.memory.used, free: cache.memory.free, percentage: cache.memory.percentage, totalFormatted: fmtBytes(cache.memory.total), usedFormatted: fmtBytes(cache.memory.used), percentageFormatted: cache.memory.percentage + '%' },
+      context: { used: cache.context.used, limit: cache.context.limit, pct: cache.context.pct, usedFormatted: fmtToken(cache.context.used), limitFormatted: fmtToken(cache.context.limit) },
+      processes: cache.processes, sessions: cache.sessions, status: cache.status, refreshInterval: REFRESH_INTERVAL
+    }));
+  } else if (pathname === '/api/p100') {
+    res.end(JSON.stringify(getP100()));
+  } else if (pathname === '/api/p100/risks') {
+    res.end(JSON.stringify(getP100Risks()));
+  } else if (pathname === '/api/p100/bom') {
+    res.end(JSON.stringify(getP100BOM()));
+  } else if (pathname === '/api/p100/docs') {
+    res.end(JSON.stringify(getP100Docs()));
+  } else if (pathname === '/api/p100/schedule') {
+    res.end(JSON.stringify(getP100Schedule()));
   } else if (pathname === '/health') {
     res.end(JSON.stringify({ status: 'ok', timestamp: Date.now() }));
   } else {
-    res.statusCode = 404;
-    res.end(JSON.stringify({ error: 'Not found' }));
-  }
-}
-
-// 静态文件服务
-function serveStatic(req, res) {
-  const authHeader = req.headers['authorization'];
-  if (!checkAuth(authHeader)) {
-    sendAuthChallenge(res);
-    return;
-  }
-  
-  let filePath = req.url === '/' ? '/index.html' : req.url;
-  filePath = path.join(__dirname, 'public', filePath);
-  
-  const extname = path.extname(filePath);
-  const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon' };
-  
-  res.setHeader('Content-Type', contentTypes[extname] || 'text/plain');
-  
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.statusCode = err.code === 'ENOENT' ? 404 : 500;
-      res.end(err.code === 'ENOENT' ? 'File not found' : 'Server error');
-    } else {
-      res.end(content);
-    }
-  });
-}
-
-// 创建 HTTP 服务器
-const server = http.createServer((req, res) => {
-  const parsedUrl = url.parse(req.url);
-  if (parsedUrl.pathname.startsWith('/api/') || parsedUrl.pathname === '/health') {
-    handleApi(req, res);
-  } else {
-    serveStatic(req, res);
+    // Static files
+    var filePath = pathname === '/' ? '/index.html' : pathname;
+    var fullPath = pathModule.join(__dirname, 'public', filePath);
+    var ext = pathModule.extname(fullPath);
+    res.setHeader('Content-Type', mimeTypes[ext] || 'text/plain');
+    fs.readFile(fullPath, function(err, data) {
+      if (err) { res.writeHead(404); res.end('Not found'); }
+      else { res.end(data); }
+    });
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`🦞 OpenClaw Monitor Server running at http://localhost:${PORT}`);
-  console.log(`🔐 Auth: ${AUTH_USER} / ${AUTH_PASS}`);
-  console.log(`🔄 Refresh interval: ${REFRESH_INTERVAL / 1000}s`);
-  updateSystemData();
-  setInterval(updateSystemData, REFRESH_INTERVAL);
+server.listen(PORT, function() {
+  console.log('🦞 Server running at http://localhost:' + PORT);
+  update();
+  setInterval(update, REFRESH_INTERVAL);
 });
 
 module.exports = server;
