@@ -30,7 +30,7 @@ npm start
 
 ### 3. 访问监控面板
 
-打开浏览器访问: http://localhost:8765
+打开浏览器访问: http://localhost:8766
 
 ## API 接口
 
@@ -40,24 +40,6 @@ npm start
 | `GET /api/cpu` | 获取 CPU 使用率 |
 | `GET /api/memory` | 获取内存使用率 |
 | `GET /health` | 健康检查 |
-
-## 配置说明
-
-### 刷新频率
-
-修改 `server.js` 中的 `REFRESH_INTERVAL`:
-
-```javascript
-const REFRESH_INTERVAL = 30000; // 30s 刷新间隔
-```
-
-### 端口号
-
-修改 `server.js` 中的 `PORT`:
-
-```javascript
-const PORT = 8765;
-```
 
 ## 项目结构
 
@@ -75,15 +57,6 @@ openclaw-monitor/
 - **后端**: Node.js 原生 HTTP 服务
 - **前端**: 原生 HTML/CSS/JavaScript
 - **样式**: VT323 像素字体
-
-## TODO
-
-- [ ] 添加 Token 使用量监控
-- [ ] 支持历史数据图表
-- [ ] 添加告警通知功能
-- [ ] 支持多设备监控
-- [ ] 添加用户认证
-- [ ] 数据持久化存储
 
 ## License
 

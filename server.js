@@ -5,7 +5,7 @@
 
 const http = require('http');
 const url = require('url');
-const { execSync, exec } = require('child_process');
+const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -82,7 +82,6 @@ function getMemoryUsage() {
 // 获取 OpenClaw 任务队列状态
 function getTaskStatus() {
   return new Promise((resolve) => {
-    // 通过检查进程数和日志来估算
     exec('ps aux | grep -c "[o]penclaw" 2>/dev/null || echo 0', (err, stdout) => {
       const total = parseInt(stdout.trim()) || 0;
       resolve({
