@@ -134,11 +134,35 @@ body.dark .badge.green { background: #14532d; color: #4ade80; }
 .decision-text { font-size: 12px; color: var(--text-main); line-height: 1.5; }
 
 /* ── Team Item ── */
-.team-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.team-item:last-child { border-bottom: none; }
-.avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
-.team-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
-.team-role { font-size: 11px; color: var(--text-muted); }
+.team-card {
+  background: var(--bg-card); border-radius: 10px; margin-bottom: 10px;
+  border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden;
+}
+.team-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.team-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.team-info { flex: 1; }
+.team-name { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.team-role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.team-score-badge { text-align: center; }
+.team-score-num { font-size: 22px; font-weight: 800; color: var(--accent-blue); line-height: 1; }
+.team-score-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.team-card-body { padding: 10px 14px; }
+.team-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.team-tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.team-tag.strength { background: #D1FAE5; color: #15803D; }
+.team-tag.improve { background: #FEF3C7; color: #92400E; }
+.team-tag.done { background: #DBEAFE; color: #1D4ED8; }
+.team-tag.risk { background: #FEE2E2; color: #B91C1C; }
+body.dark .team-tag.strength { background: #14532d; color: #4ade80; }
+body.dark .team-tag.improve { background: #451a03; color: #fbbf24; }
+body.dark .team-tag.done { background: #1e3a5f; color: #60a5fa; }
+body.dark .team-tag.risk { background: #3f1a1a; color: #f87171; }
+.team-eval { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+.team-eval strong { color: var(--text-main); }
+.team-section-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
 
 /* ── BOM Tags ── */
 .bom-cat { margin-bottom: 12px; }
@@ -581,16 +605,72 @@ function renderTeam() {
   var el = document.getElementById('team-content');
   if (!el) return;
   var team = [
-    { name: '陈翀', role: 'PM · 项目负责人', icon: '👤' },
-    { name: '盛远征', role: 'TPM · 可靠性测试', icon: '🔬' },
-    { name: '申子立', role: 'TPM · 软件开发', icon: '💻' },
-    { name: '何维', role: 'TPM · 产品研发', icon: '🎯' },
-    { name: '杜世杰', role: '结构负责人', icon: '⚙️' },
+    {
+      name: '陈翀', role: 'PM · 项目负责人', icon: '👤',
+      score: '9.2',
+      eval: '具备系统性项目管理能力，主动识别 Pad 涨价等关键风险并推动决策。在多供应商、多部门协作中展现出高效的统筹协调能力，进度把控到位，是项目推进的核心驱动力。',
+      strengths: ['风险管理意识强', '跨部门协调高效', '决策推动力强'],
+      highlights: ['主动提出 Pad 锁货建议（节省 15-20 万）', '推进特美/常宏双供应商策略', '统筹 EVT→DVT 评审转换'],
+      concerns: []
+    },
+    {
+      name: '盛远征', role: 'TPM · 可靠性测试', icon: '🔬',
+      score: '8.6',
+      eval: '可靠性测试专业扎实，测试方案设计严谨。展台表面处理和防盗锁测试推进有序，主动增加测试强度（72 小时高温高湿）体现质量意识。',
+      strengths: ['测试方案严谨', '质量意识强', '执行力好'],
+      highlights: ['展台表面处理摸底完成', '防盗锁可靠性测试推进', '盐雾测试细致跟进'],
+      concerns: ['温箱资源导致 2 天顺延', '特美结构内构卡扣问题待解决']
+    },
+    {
+      name: '申子立', role: 'TPM · 软件开发', icon: '💻',
+      score: '8.0',
+      eval: '软件开发基本功能完成，进度基本可控。bug 修复预计本周末收敛，Tesla 新版本已出并验证。多语言翻译（法语/荷兰语）跟进中。',
+      strengths: ['功能交付按时', '多语言适配意识', '版本管理规范'],
+      highlights: ['软件基本功能开发完成', 'Tesla 新版文案已刷入', '多语言第一期推进日语/英语'],
+      concerns: ['bug 收敛时间紧张（本周末）', '多语言翻译进度需持续跟进']
+    },
+    {
+      name: '何维', role: 'TPM · 产品研发', icon: '🎯',
+      score: '7.8',
+      eval: '产品视角清晰，关注用户体验细节。展台可靠性和高低温测试配合积极。配合陈翀组织 Marketing 和 Retail 评审，UX 优化持续推进中。',
+      strengths: ['用户体验思维', '产品细节把控', '配合度高'],
+      highlights: ['展台高低温/可靠性测试跟进', '配合 UX 设计优化', 'Marketing 评审协调'],
+      concerns: ['部分功能依赖外部交付时间']
+    },
+    {
+      name: '杜世杰', role: '结构负责人', icon: '⚙️',
+      score: '8.3',
+      eval: '结构设计执行到位，镜腿、线材等核心部件测试推进有序。镜腿转轴十牛变形问题已优化。防盗锁极限测试方案思路清晰，能主动优化测试策略。',
+      strengths: ['结构设计能力强', '测试跟进主动', '问题分析清晰'],
+      highlights: ['镜腿转轴强度优化完成', '线材摇摆/抗拉测试补做', '防盗锁极限测试方案优化'],
+      concerns: ['坤元镜框结构测试不通过', '特美内部结构复杂问题待解']
+    },
   ];
+
   el.innerHTML = team.map(function(m) {
-    return '<div class="team-item">' +
-      '<div class="avatar">' + m.icon + '</div>' +
-      '<div><div class="team-name">' + m.name + '</div><div class="team-role">' + m.role + '</div></div></div>';
+    var strengths = m.strengths.map(function(s) { return '<span class="team-tag strength">💪 ' + s + '</span>'; }).join('');
+    var highlights = m.highlights.map(function(h) { return '<span class="team-tag done">✅ ' + h + '</span>'; }).join('');
+    var concerns = m.concerns.map(function(c) { return '<span class="team-tag risk">⚠️ ' + c + '</span>'; }).join('');
+    return '<div class="team-card">' +
+      '<div class="team-card-header">' +
+        '<div class="team-avatar">' + m.icon + '</div>' +
+        '<div class="team-info">' +
+          '<div class="team-name">' + m.name + '</div>' +
+          '<div class="team-role">' + m.role + '</div>' +
+        '</div>' +
+        '<div class="team-score-badge">' +
+          '<div class="team-score-num">' + m.score + '</div>' +
+          '<div class="team-score-label'>能力评分</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="team-card-body">' +
+        '<div class="team-section-label">综合评价</div>' +
+        '<div class="team-eval">' + m.eval + '</div>' +
+        (strengths ? '<div style="margin-top:8px"><div class="team-section-label">核心优势</div><div class="team-tags">' + strengths + '</div></div>' : '') +
+        (highlights ? '<div style="margin-top:6px"><div class="team-section-label">近期表现</div><div class="team-tags">' + highlights + '</div></div>' : '') +
+        (concerns ? '<div style="margin-top:6px"><div class="team-section-label">待关注</div><div class="team-tags">' + concerns + '</div></div>' : '') +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
