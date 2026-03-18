@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦞 OpenClaw 运维监控</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: #0a0a0a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'VT323', 'Courier New', monospace;
+    padding: 20px;
+  }
+  
+  .monitor {
+    background: #111;
+    border: 3px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5);
+  }
+  
+  .title {
+    text-align: center;
+    color: #00ff00;
+    font-size: 24px;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #00ff00;
+    border-bottom: 2px solid #00ff00;
+    padding-bottom: 10px;
+  }
+  
+  .section {
+    margin: 10px 0;
+    padding: 10px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 4px;
+  }
+  
+  .section-title {
+    color: #ffff00;
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    color: #00ffff;
+    font-size: 14px;
+  }
+  
+  .label { color: #888; }
+  .value { color: #00ff00; text-align: right; }
+  
+  .progress-bar {
+    background: #222;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff00, #00ff88);
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 5px;
+    font-size: 10px;
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .progress-fill.cpu {
+    background: linear-gradient(90deg, #ff6600, #ffaa00);
+  }
+  
+  .progress-fill.memory {
+    background: linear-gradient(90deg, #00aaff, #00ffff);
+  }
+  
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 5px;
+  }
+  
+  .status-box {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: center;
+    border-radius: 4px;
+  }
+  
+  .status-box .num {
+    font-size: 28px;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+  }
+  
+  .status-box .desc {
+    font-size: 12px;
+    color: #888;
+  }
+  
+  .status-ok {
+    text-align: center;
+    color: #00ff00;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #0a2a0a;
+    border: 2px solid #00ff00;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #00ff00;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-warn {
+    text-align: center;
+    color: #ffaa00;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #2a2a0a;
+    border: 2px solid #ffaa00;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #ffaa00;
+  }
+  
+  .status-error {
+    text-align: center;
+    color: #ff4444;
+    font-size: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #2a0a0a;
+    border: 2px solid #ff4444;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #ff4444;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .scanlines {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    z-index: 1000;
+  }
+  
+  .footer {
+    text-align: center;
+    color: #444;
+    font-size: 12px;
+    margin-top: 15px;
+  }
+  
+  .info-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .info-row .item {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .loading {
+    color: #ffff00 !important;
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  
+  .error {
+    color: #ff4444 !important;
+  }
+  
+  .refresh-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #00ff00;
+    border-radius: 50%;
+    margin-left: 5px;
+    animation: refresh-pulse 30s infinite;
+  }
+  
+  @keyframes refresh-pulse {
+    0% { background: #00ff00; }
+    50% { background: #ffff00; }
+    100% { background: #00ff00; }
+  }
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<div class="monitor">
+  <div class="title">🖥️ OPENCLAW STATUS</div>
+  
+  <div class="section">
+    <div class="section-title">📦 SYSTEM</div>
+    <div class="info-row">
+      <div class="item">
+        <div class="row"><span class="label">Version</span><span class="value" id="version">v1.0.0</span></div>
+        <div class="row"><span class="label">Time</span><span class="value" id="time">--:--:--</span></div>
+        <div class="row"><span class="label">Platform</span><span class="value" id="platform">--</span></div>
+      </div>
+      <div class="item">
+        <div class="row"><span class="label">CPU</span><span class="value" id="cpu_pct">--</span></div>
+        <div class="row"><span class="label">Idle</span><span class="value" id="cpu_idle">--</span></div>
+        <div class="row"><span class="label">Cores</span><span class="value" id="cpu_cores">--</span></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">🧠 MODEL</div>
+    <div class="row"><span class="label">Engine</span><span class="value">MiniMax-M2.5-highspeed</span></div>
+    <div class="row"><span class="label">Provider</span><span class="value">minimax-cn</span></div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">📊 TOKENS</div>
+    <div class="info-row">
+      <div class="item">
+        <div class="row"><span class="label">Input</span><span class="value" id="tokens_in">--</span></div>
+        <div class="row"><span class="label">Output</span><span class="value" id="tokens_out">--</span></div>
+      </div>
+      <div class="item">
+        <div class="row"><span class="label">Cache Hit</span><span class="value" id="cache">--</span></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">💾 CONTEXT</div>
+    <div class="row">
+      <span class="label">Usage</span>
+      <span class="value" id="context_pct">--</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="context_bar" style="width: 0%">0%</div>
+    </div>
+    <div class="row" style="margin-top:5px">
+      <span class="label">Absolute</span>
+      <span class="value" id="context_abs">--</span>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">⚡ QUEUE & TASKS</div>
+    <div class="status-grid">
+      <div class="status-box">
+        <div class="num" id="running_tasks">--</div>
+        <div class="desc">RUNNING</div>
+      </div>
+      <div class="status-box">
+        <div class="num" id="queued_tasks">--</div>
+        <div class="desc">QUEUED</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">🖥️ DEVICE STATUS</div>
+    <div class="row">
+      <span class="label">CPU Load</span>
+      <span class="value" id="sys_cpu">--</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill cpu" id="sys_cpu_bar" style="width: 0%">0%</div>
+    </div>
+    <div class="row" style="margin-top:5px">
+      <span class="label">Memory</span>
+      <span class="value" id="sys_mem">--</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill memory" id="sys_mem_bar" style="width: 0%">0%</div>
+    </div>
+    <div class="row" style="margin-top:5px">
+      <span class="label">Memory Detail</span>
+      <span class="value" id="sys_mem_detail">--</span>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">🧵 SESSION</div>
+    <div class="row"><span class="label">ID</span><span class="value">agent:main:main</span></div>
+    <div class="row"><span class="label">Channel</span><span class="value">feishu</span></div>
+    <div class="row"><span class="label">Runtime</span><span class="value">direct</span></div>
+  </div>
+  
+  <div id="status_container">
+    <div class="status-ok" id="status">✅ OPERATIONAL</div>
+  </div>
+  
+  <div class="footer">
+    Last updated: <span id="last_update">--</span>
+    <span class="refresh-indicator" title="Auto refresh every 30s"></span>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+const REFRESH_INTERVAL = 30000; // 30s
+
+let updateTimer = null;
+let isOnline = true;
+
+// 更新时钟
+function updateTime() {
+  const now = new Date();
+  document.getElementById('time').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+}
+
+// 获取并更新所有数据
+async function fetchAllData() {
+  try {
+    const response = await fetch(`${API_BASE}/api/status`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    isOnline = true;
+    
+    // 更新时间
+    document.getElementById('last_update').textContent = new Date(data.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+    
+    // 系统信息
+    document.getElementById('version').textContent = data.server.version;
+    document.getElementById('platform').textContent = data.server.platform;
+    
+    // CPU
+    document.getElementById('cpu_pct').textContent = data.cpu.usage + '%';
+    document.getElementById('cpu_idle').textContent = data.cpu.idle + '%';
+    document.getElementById('cpu_cores').textContent = data.cpu.cores;
+    document.getElementById('sys_cpu').textContent = data.cpu.usage + '%';
+    document.getElementById('sys_cpu_bar').style.width = data.cpu.usage + '%';
+    document.getElementById('sys_cpu_bar').textContent = data.cpu.usage + '%';
+    
+    // 内存
+    document.getElementById('sys_mem').textContent = data.memory.percentageFormatted;
+    document.getElementById('sys_mem_bar').style.width = data.memory.percentage + '%';
+    document.getElementById('sys_mem_bar').textContent = data.memory.percentageFormatted;
+    document.getElementById('sys_mem_detail').textContent = `${data.memory.usedFormatted} / ${data.memory.totalFormatted}`;
+    
+    // 任务队列
+    document.getElementById('running_tasks').textContent = data.processes.running;
+    document.getElementById('queued_tasks').textContent = data.processes.queued;
+    
+    // 状态显示
+    updateStatus(data);
+    
+    // 移除 loading 状态
+    removeLoadingClass();
+    
+  } catch (error) {
+    console.error('Fetch error:', error);
+    isOnline = false;
+    showError('⚠️ 连接失败');
+  }
+}
+
+// 更新状态显示
+function updateStatus(data) {
+  const statusContainer = document.getElementById('status_container');
+  const statusEl = document.getElementById('status');
+  
+  // 根据 CPU 和内存使用率判断状态
+  if (data.cpu.usage > 80 || data.memory.percentage > 90) {
+    statusContainer.innerHTML = '<div class="status-error">🚨 高负载警告</div>';
+  } else if (data.cpu.usage > 60 || data.memory.percentage > 75) {
+    statusContainer.innerHTML = '<div class="status-warn">⚠️ 负载偏高</div>';
+  } else {
+    statusContainer.innerHTML = '<div class="status-ok">✅ OPERATIONAL</div>';
+  }
+}
+
+// 移除 loading 样式
+function removeLoadingClass() {
+  document.querySelectorAll('.value').forEach(el => {
+    el.classList.remove('loading');
+    el.classList.remove('error');
+  });
+}
+
+// 显示错误
+function showError(msg) {
+  const statusContainer = document.getElementById('status_container');
+  statusContainer.innerHTML = `<div class="status-error">${msg}</div>`;
+}
+
+// 设置 loading 状态
+function setLoading() {
+  document.querySelectorAll('.value').forEach(el => {
+    if (el.textContent === '--') {
+      el.classList.add('loading');
+    }
+  });
+}
+
+// 初始化
+function init() {
+  updateTime();
+  setLoading();
+  fetchAllData();
+  
+  // 每秒更新时钟
+  setInterval(updateTime, 1000);
+  
+  // 每 30s 更新数据
+  setInterval(fetchAllData, REFRESH_INTERVAL);
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

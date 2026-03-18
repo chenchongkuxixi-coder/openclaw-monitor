@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-monitor",
+  "version": "1.0.0",
+  "description": "OpenClaw 运维监控面板 - 像素风可视化界面",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["openclaw", "monitor", "dashboard"],
+  "author": "chenchongkuxixi-coder",
+  "license": "MIT"
+}
